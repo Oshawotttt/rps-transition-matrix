@@ -69,8 +69,11 @@ class TransitionMatrix:
         smoothed = self.counts + self.alpha
         return smoothed / smoothed.sum(axis=0)
 
+    def _labelled(self, values: np.ndarray) -> pd.DataFrame:
+        return pd.DataFrame(values, index=MOVES, columns=self.states)
+
     def to_frame(self) -> pd.DataFrame:
-        return pd.DataFrame(self.P, index=MOVES, columns=self.states)
+        return self._labelled(self.P)
 
     def column(self, state: str) -> np.ndarray:
         """P @ e_j for the state's column j; KeyError on an unknown label."""
@@ -87,7 +90,7 @@ class TransitionMatrix:
 
     def save(self, path: str | Path) -> None:
         """Write counts: rows R, P, S; first column "move", then one column per state."""
-        pd.DataFrame(self.counts, index=MOVES, columns=self.states).to_csv(path, index_label="move")
+        self._labelled(self.counts).to_csv(path, index_label="move")
 
     @classmethod
     def load(cls, path: str | Path, alpha: float = 1.0) -> "TransitionMatrix":

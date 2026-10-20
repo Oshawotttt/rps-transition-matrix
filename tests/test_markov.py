@@ -12,8 +12,6 @@ from rps_markov.markov import MOVES, OUTCOMES, TOKENS, TransitionMatrix, add_his
 MASTER = Path(__file__).resolve().parents[1] / "data" / "processed" / "rps_human_combined.csv"
 PARTITIONS = MASTER.parent / "partitions"
 SRC = Path(__file__).resolve().parents[1] / "src"
-COLUMNS = ["dataset", "game_id", "player_id", "round", "move", "opp_move",
-           "outcome", "prev_move", "prev_opp_move", "prev_outcome"]
 
 
 def test_state_labels():
