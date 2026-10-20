@@ -1,4 +1,5 @@
 """k-Markov transition matrices over (move, outcome) histories of human RPS players."""
+import argparse
 import itertools
 from pathlib import Path
 
@@ -95,3 +96,21 @@ class TransitionMatrix:
         tm = cls(len(df.columns[0].split("-")), alpha)
         tm.counts = df.loc[MOVES, tm.states].to_numpy(dtype=int)
         return tm
+
+
+def main(argv: list[str] | None = None) -> None:
+    """Write N_<name>.csv (counts) and P_<name>.csv (probabilities) for each input <name>.csv."""
+    parser = argparse.ArgumentParser(prog="python -m rps_markov.markov", description=main.__doc__)
+    parser.add_argument("--csv", nargs="+", required=True, type=Path, help="master-format CSV files")
+    parser.add_argument("--out", required=True, type=Path, help="output folder")
+    parser.add_argument("--k", type=int, default=3)
+    args = parser.parse_args(argv)
+    args.out.mkdir(parents=True, exist_ok=True)
+    for path in args.csv:
+        tm = TransitionMatrix.from_csv(path, k=args.k)
+        tm.save(args.out / f"N_{path.stem}.csv")
+        tm.to_frame().to_csv(args.out / f"P_{path.stem}.csv", index_label="move")
+
+
+if __name__ == "__main__":
+    main()

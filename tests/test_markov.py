@@ -1,3 +1,6 @@
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -8,6 +11,7 @@ from rps_markov.markov import MOVES, OUTCOMES, TOKENS, TransitionMatrix, add_his
 
 MASTER = Path(__file__).resolve().parents[1] / "data" / "processed" / "rps_human_combined.csv"
 PARTITIONS = MASTER.parent / "partitions"
+SRC = Path(__file__).resolve().parents[1] / "src"
 COLUMNS = ["dataset", "game_id", "player_id", "round", "move", "opp_move",
            "outcome", "prev_move", "prev_opp_move", "prev_outcome"]
 
@@ -178,3 +182,35 @@ def test_pooled_counts_sum():
 def test_fit_rejects_unknown_outcome():
     with pytest.raises(ValueError):
         TransitionMatrix(k=1).fit(rounds("a", [("R", "win"), ("P", "draw"), ("S", "tie")]))
+
+
+def run_cli(*args):
+    env = {**os.environ, "PYTHONPATH": str(SRC)}
+    return subprocess.run([sys.executable, "-m", "rps_markov.markov", *map(str, args)],
+                          env=env, capture_output=True, text=True)
+
+
+@pytest.fixture
+def cli_out(tmp_path):
+    for name, seed in [("a", 1), ("b", 2)]:
+        synthetic_rounds(seed=seed).to_csv(tmp_path / f"{name}.csv", index=False)
+    out = tmp_path / "out"
+    result = run_cli("--csv", tmp_path / "a.csv", tmp_path / "b.csv", "--out", out)
+    assert result.returncode == 0, result.stderr
+    return out
+
+
+def test_cli_writes_files(cli_out):
+    assert sorted(p.name for p in cli_out.iterdir()) == ["N_a.csv", "N_b.csv", "P_a.csv", "P_b.csv"]
+
+
+def test_cli_output_valid(cli_out):
+    for name in ["a", "b"]:
+        tm = TransitionMatrix.load(cli_out / f"N_{name}.csv")
+        assert tm.P.shape == (3, 729)
+        np.testing.assert_allclose(tm.P.sum(axis=0), 1, rtol=0, atol=1e-12)
+
+        P = pd.read_csv(cli_out / f"P_{name}.csv", index_col="move")
+        np.testing.assert_allclose(P.to_numpy(), tm.P)
+        assert list(P.index) == MOVES
+        assert list(P.columns) == tm.states

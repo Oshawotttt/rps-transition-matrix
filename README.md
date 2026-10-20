@@ -53,8 +53,25 @@ tm = TransitionMatrix.from_csv("data/processed/partitions/train_pooled.csv", k=3
 test = add_history(load_rounds("data/processed/partitions/test_pooled.csv"), k=3)
 probs = [tm.column(s) for s in test["state"]]  # P(R), P(P), P(S) for each test row
 
-tm.save("data/processed/N_train_pooled.csv")   # counts; reload with TransitionMatrix.load(path)
+tm.save("data/processed/transition_matrices/N_train_pooled.csv")  # counts; reload with TransitionMatrix.load(path)
 tm.to_frame()                                  # P as a DataFrame: index R, P, S; columns = states
 ```
 
 Pick the dataset by picking the file: `train_brockbank.csv`, `train_wxz.csv` or `train_pooled.csv`.
+
+## CLI
+
+Write the k = 3 matrices for one or more CSVs, e.g. the three train partitions:
+
+```
+PYTHONPATH=src python -m rps_markov.markov \
+  --csv data/processed/partitions/train_brockbank.csv data/processed/partitions/train_wxz.csv data/processed/partitions/train_pooled.csv \
+  --out data/processed/transition_matrices
+```
+
+For each input `<name>.csv` it writes to `--out`:
+
+- `N_<name>.csv`: counts. Header `move,<state>,...`; 3 rows `R, P, S`; 729 state columns. Reload with `TransitionMatrix.load(path)`.
+- `P_<name>.csv`: probabilities, same layout; each column sums to 1.
+
+`--k` (default 3) sets the history length.

@@ -190,9 +190,9 @@ CLI: `python -m rps_markov.markov --csv <file> [<file> ...] --out data/processed
   - Three sets of P: one per dataset and one pooled (user).
   - Output folder `data/processed/transition_matrices/` (user).
 - **Acceptance criteria:**
-  - [ ] CLI on two synthetic CSVs `a.csv`, `b.csv` writes `N_a.csv`, `P_a.csv`, `N_b.csv`, `P_b.csv` to `--out` (`test_cli_writes_files`, `tmp_path`).
-  - [ ] Each `N_*.csv` loads via `TransitionMatrix.load` with `P.shape == (3, 729)` and column sums 1 (`test_cli_output_valid`).
-  - [ ] Real run exits 0: `python -m rps_markov.markov --csv data/processed/partitions/train_brockbank.csv data/processed/partitions/train_wxz.csv data/processed/partitions/train_pooled.csv --out data/processed/transition_matrices` (with `src` on `PYTHONPATH`).
+  - [x] CLI on two synthetic CSVs `a.csv`, `b.csv` writes `N_a.csv`, `P_a.csv`, `N_b.csv`, `P_b.csv` to `--out` (`test_cli_writes_files`, `tmp_path`).
+  - [x] Each `N_*.csv` loads via `TransitionMatrix.load` with `P.shape == (3, 729)` and column sums 1 (`test_cli_output_valid`).
+  - [x] Real run exits 0: `python -m rps_markov.markov --csv data/processed/partitions/train_brockbank.csv data/processed/partitions/train_wxz.csv data/processed/partitions/train_pooled.csv --out data/processed/transition_matrices` (with `src` on `PYTHONPATH`).
 - **Doc deltas:** `README.md`: CLI usage and output file layout.
 
 ## 6. Human checks
