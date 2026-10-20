@@ -1,11 +1,13 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
-from rps_markov.markov import OUTCOMES, TOKENS, add_history, load_rounds, state_labels
+from rps_markov.markov import MOVES, OUTCOMES, TOKENS, TransitionMatrix, add_history, load_rounds, state_labels
 
 MASTER = Path(__file__).resolve().parents[1] / "data" / "processed" / "rps_human_combined.csv"
+PARTITIONS = MASTER.parent / "partitions"
 COLUMNS = ["dataset", "game_id", "player_id", "round", "move", "opp_move",
            "outcome", "prev_move", "prev_opp_move", "prev_outcome"]
 
@@ -73,3 +75,106 @@ def test_add_history_matches_prev_columns():
 
     assert len(with_prev) == master["prev_move"].notna().sum() > 0
     assert (with_prev["state"] == with_prev["prev_move"] + with_prev["prev_outcome"].map(OUTCOMES)).all()
+
+
+def test_counts_small():
+    tm = TransitionMatrix(k=2).fit(rounds("a", BASIC))
+
+    # round 3: state RW-PL, next move S; round 4: state PL-ST, next move R
+    expected = np.zeros((3, 81), dtype=int)
+    expected[2, tm.states.index("RW-PL")] = 1
+    expected[0, tm.states.index("PL-ST")] = 1
+    np.testing.assert_array_equal(tm.counts, expected)
+
+
+def synthetic_rounds(n_players=4, n_rounds=40, seed=0):
+    rng = np.random.default_rng(seed)
+    frames = []
+    for p in range(n_players):
+        moves = rng.choice(MOVES, size=n_rounds)
+        outcomes = rng.choice(list(OUTCOMES), size=n_rounds)
+        frames.append(rounds(f"p{p}", list(zip(moves, outcomes))))
+    return pd.concat(frames, ignore_index=True)
+
+
+@pytest.mark.parametrize("k", [1, 2, 3])
+def test_columns_sum_to_one(k):
+    P = TransitionMatrix(k).fit(synthetic_rounds()).P
+
+    assert P.shape == (3, 9**k)
+    assert ((P >= 0) & (P <= 1)).all()
+    np.testing.assert_allclose(P.sum(axis=0), 1, rtol=0, atol=1e-12)
+
+
+def test_unseen_state_uniform():
+    tm = TransitionMatrix(k=2, alpha=1.0).fit(rounds("a", BASIC))
+
+    np.testing.assert_allclose(tm.column("SW-SW"), [1 / 3, 1 / 3, 1 / 3])
+    # seen state RW-PL: one S out of one -> (0+1, 0+1, 1+1) / 4
+    np.testing.assert_allclose(tm.column("RW-PL"), [0.25, 0.25, 0.5])
+
+
+def test_column_is_P_e_j():
+    tm = TransitionMatrix(k=3).fit(synthetic_rounds())
+    e_j = np.zeros(729)
+    e_j[tm.states.index("RW-PL-ST")] = 1
+
+    np.testing.assert_array_equal(tm.column("RW-PL-ST"), tm.P @ e_j)
+    np.testing.assert_array_equal(tm.column("RW-PL-ST"), tm.to_frame()["RW-PL-ST"].to_numpy())
+    assert list(tm.to_frame().index) == MOVES
+    assert list(tm.to_frame().columns) == tm.states
+
+
+def test_predict_mixture():
+    tm = TransitionMatrix(k=1).fit(synthetic_rounds())
+    x = np.zeros(9)
+    x[TOKENS.index("RW")], x[TOKENS.index("PL")] = 0.25, 0.75
+
+    np.testing.assert_allclose(tm.predict(x), 0.25 * tm.column("RW") + 0.75 * tm.column("PL"))
+    assert tm.predict(x).sum() == pytest.approx(1)
+
+
+def test_column_unknown_state():
+    with pytest.raises(KeyError):
+        TransitionMatrix(k=1).column("XX")
+
+
+def test_counts_total():
+    df = synthetic_rounds()
+
+    assert TransitionMatrix(k=2).fit(df).counts.sum() == len(add_history(df, 2))
+
+
+def test_save_load_roundtrip(tmp_path):
+    tm = TransitionMatrix(k=2).fit(synthetic_rounds())
+    path = tmp_path / "N.csv"
+
+    tm.save(path)
+    loaded = TransitionMatrix.load(path)
+
+    assert loaded.k == 2
+    np.testing.assert_array_equal(loaded.counts, tm.counts)
+    header = path.read_text().splitlines()[0].split(",")
+    assert header == ["move"] + tm.states
+
+
+def test_from_csv(tmp_path):
+    path = tmp_path / "rounds.csv"
+    synthetic_rounds().to_csv(path, index=False)
+
+    np.testing.assert_array_equal(TransitionMatrix.from_csv(path, k=2).counts,
+                                  TransitionMatrix(2).fit(load_rounds(path)).counts)
+
+
+@pytest.mark.skipif(not (PARTITIONS / "train_pooled.csv").exists(), reason="partition files absent")
+def test_pooled_counts_sum():
+    brockbank = TransitionMatrix.from_csv(PARTITIONS / "train_brockbank.csv")
+    wxz = TransitionMatrix.from_csv(PARTITIONS / "train_wxz.csv")
+    pooled = TransitionMatrix.from_csv(PARTITIONS / "train_pooled.csv")
+
+    np.testing.assert_array_equal(brockbank.counts + wxz.counts, pooled.counts)
+
+
+def test_fit_rejects_unknown_outcome():
+    with pytest.raises(ValueError):
+        TransitionMatrix(k=1).fit(rounds("a", [("R", "win"), ("P", "draw"), ("S", "tie")]))

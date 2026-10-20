@@ -167,16 +167,16 @@ CLI: `python -m rps_markov.markov --csv <file> [<file> ...] --out data/processed
   - "counter should take in the whole csv" (user): no row or dataset filter in `fit` / `from_csv`.
   - File layout: 3 rows `R, P, S`, first column `move`, then 729 state columns (user confirmed).
 - **Acceptance criteria:**
-  - [ ] `TransitionMatrix(k).fit(df).counts` on S2 synthetic data equals hand-computed counts (`test_counts_small`).
-  - [ ] For k = 1, 2, 3 on synthetic data: `P.shape == (3, 9**k)`, entries in [0, 1], `P.sum(axis=0)` all 1 within 1e-12 (`test_columns_sum_to_one`).
-  - [ ] Unseen state column equals [1/3, 1/3, 1/3] with alpha=1 (`test_unseen_state_uniform`).
-  - [ ] `column("RW-PL-ST")` equals `P @ e_j` and `to_frame()["RW-PL-ST"]` (`test_column_is_P_e_j`).
-  - [ ] `predict(x)` equals `P @ x` and sums to 1 for a probability vector x (`test_predict_mixture`).
-  - [ ] `column("XX")` raises `KeyError` (`test_column_unknown_state`).
-  - [ ] `counts.sum() == len(add_history(df, k))` (`test_counts_total`).
-  - [ ] `tm.save(path)` then `TransitionMatrix.load(path)` gives equal `counts` and `k`, with `path` under `tmp_path` (`test_save_load_roundtrip`).
-  - [ ] `from_csv(path, k)` equals `TransitionMatrix(k).fit(load_rounds(path))` (`test_from_csv`).
-  - [ ] Counts from `train_brockbank.csv` + `train_wxz.csv` equal counts from `train_pooled.csv` (`test_pooled_counts_sum`, skipped if files absent).
+  - [x] `TransitionMatrix(k).fit(df).counts` on S2 synthetic data equals hand-computed counts (`test_counts_small`).
+  - [x] For k = 1, 2, 3 on synthetic data: `P.shape == (3, 9**k)`, entries in [0, 1], `P.sum(axis=0)` all 1 within 1e-12 (`test_columns_sum_to_one`).
+  - [x] Unseen state column equals [1/3, 1/3, 1/3] with alpha=1 (`test_unseen_state_uniform`).
+  - [x] `column("RW-PL-ST")` equals `P @ e_j` and `to_frame()["RW-PL-ST"]` (`test_column_is_P_e_j`).
+  - [x] `predict(x)` equals `P @ x` and sums to 1 for a probability vector x (`test_predict_mixture`).
+  - [x] `column("XX")` raises `KeyError` (`test_column_unknown_state`).
+  - [x] `counts.sum() == len(add_history(df, k))` (`test_counts_total`).
+  - [x] `tm.save(path)` then `TransitionMatrix.load(path)` gives equal `counts` and `k`, with `path` under `tmp_path` (`test_save_load_roundtrip`).
+  - [x] `from_csv(path, k)` equals `TransitionMatrix(k).fit(load_rounds(path))` (`test_from_csv`).
+  - [x] Counts from `train_brockbank.csv` + `train_wxz.csv` equal counts from `train_pooled.csv` (`test_pooled_counts_sum`, skipped if files absent).
 - **Doc deltas:** `README.md`: define `P` (rows = next move, columns = last-k (move, outcome) state, columns sum to 1, `P e_j`, `P x`), object usage, train/test usage with partition files.
 
 ### S4 — CLI to write matrices for given CSVs

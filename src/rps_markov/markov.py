@@ -2,6 +2,7 @@
 import itertools
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 MOVES: list[str] = ["R", "P", "S"]
@@ -38,3 +39,59 @@ def add_history(df: pd.DataFrame, k: int) -> pd.DataFrame:
         state = lagged if state is None else state + "-" + lagged
     out = out.assign(state=state)
     return out[has_history.reindex(out.index)]
+
+
+class TransitionMatrix:
+    """Counts of next move given the last k (move, outcome) tokens; P is column-stochastic, 3 x 9**k."""
+
+    def __init__(self, k: int = 3, alpha: float = 1.0) -> None:
+        self.k = k
+        self.alpha = alpha
+        self.states = state_labels(k)
+        self._index = {s: j for j, s in enumerate(self.states)}
+        self.counts = np.zeros((len(MOVES), len(self.states)), dtype=int)
+
+    def fit(self, df: pd.DataFrame) -> "TransitionMatrix":
+        """Replace counts with the transitions in every row of df that has a k-history."""
+        hist = add_history(df, self.k)
+        rows = pd.Categorical(hist["move"], categories=MOVES).codes
+        cols = pd.Categorical(hist["state"], categories=self.states).codes
+        if (rows < 0).any() or (cols < 0).any():
+            raise ValueError("moves must be R/P/S and outcomes win/lose/tie")
+        self.counts = np.zeros_like(self.counts)
+        np.add.at(self.counts, (rows, cols), 1)
+        return self
+
+    @property
+    def P(self) -> np.ndarray:
+        """Smoothed probabilities: rows = next move, columns = states; each column sums to 1."""
+        smoothed = self.counts + self.alpha
+        return smoothed / smoothed.sum(axis=0)
+
+    def to_frame(self) -> pd.DataFrame:
+        return pd.DataFrame(self.P, index=MOVES, columns=self.states)
+
+    def column(self, state: str) -> np.ndarray:
+        """P @ e_j for the state's column j; KeyError on an unknown label."""
+        return self.P[:, self._index[state]]
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        """P @ x for a belief x over the 9**k states."""
+        return self.P @ np.asarray(x)
+
+    @classmethod
+    def from_csv(cls, path: str | Path, k: int = 3, alpha: float = 1.0) -> "TransitionMatrix":
+        """Fit on every row of a master-format CSV."""
+        return cls(k, alpha).fit(load_rounds(path))
+
+    def save(self, path: str | Path) -> None:
+        """Write counts: rows R, P, S; first column "move", then one column per state."""
+        pd.DataFrame(self.counts, index=MOVES, columns=self.states).to_csv(path, index_label="move")
+
+    @classmethod
+    def load(cls, path: str | Path, alpha: float = 1.0) -> "TransitionMatrix":
+        """Read a counts CSV written by save; k comes from the state label length."""
+        df = pd.read_csv(path, index_col="move")
+        tm = cls(len(df.columns[0].split("-")), alpha)
+        tm.counts = df.loc[MOVES, tm.states].to_numpy(dtype=int)
+        return tm
