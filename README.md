@@ -2,6 +2,8 @@
 
 k-Markov transition matrices for human rock-paper-scissors moves.
 
+Docs: [architecture](docs/ARCHITECTURE.md), [contracts](docs/CONTRACTS.md), [glossary](GLOSSARY.md).
+
 ## Setup
 
 ```

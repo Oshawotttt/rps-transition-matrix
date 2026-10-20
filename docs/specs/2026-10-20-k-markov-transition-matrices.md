@@ -197,6 +197,6 @@ CLI: `python -m rps_markov.markov --csv <file> [<file> ...] --out data/processed
 
 ## 6. Human checks
 
-- [ ] S4: open `data/processed/transition_matrices/P_train_pooled.csv`. Expected: 3 rows (`R, P, S`), 729 state columns, each column sums to 1.
-- [ ] S3: fit k=1 on the master, compare with the notebook's crosstab `pd.crosstab([prev_outcome, prev_move], move, normalize="index")`. Expected: same values up to add-one smoothing, transposed.
-- [ ] S4: compare `P_train_brockbank.csv` and `P_train_wxz.csv` for a common state, e.g. `RL-RL-RL`. Expected: values differ.
+- [x] S4: open `data/processed/transition_matrices/P_train_pooled.csv`. Expected: 3 rows (`R, P, S`), 729 state columns, each column sums to 1.
+- [x] S3: fit k=1 on the master, compare with the notebook's crosstab `pd.crosstab([prev_outcome, prev_move], move, normalize="index")`. Expected: same values up to add-one smoothing, transposed.
+- [x] S4: compare `P_train_brockbank.csv` and `P_train_wxz.csv` for a common state, e.g. `RL-RL-RL`. Expected: values differ.
