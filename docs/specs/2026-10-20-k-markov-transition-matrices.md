@@ -120,15 +120,15 @@ CLI: `python -m rps_markov.markov --csv <file> [<file> ...] --out data/processed
   - Partition files (user confirmed), under `data/processed/partitions/`: `train_brockbank.csv`, `test_brockbank.csv`, `train_wxz.csv`, `test_wxz.csv`, `train_pooled.csv`, `test_pooled.csv`. Same columns as the master. Pooled = brockbank rows + wxz rows of the same split. The code has no dataset filter: picking a file picks the dataset.
   - Train/test share (user confirmed): 80% of players to train, 20% to test, per dataset, test count rounded down; seed `numpy.random.default_rng(103)`.
 - **Acceptance criteria:**
-  - [ ] `jupyter nbconvert --to notebook --execute --inplace notebooks/clean_data.ipynb` exits 0 and writes the 6 partition files listed under Decisions.
-  - [ ] `write_partitions` on a synthetic master in `tmp_path` leaves the master's SHA-256 unchanged and writes the 6 files (`tests/test_partitions.py::test_master_unchanged`).
-  - [ ] For each dataset, train ∪ test rows == master rows of that dataset and train ∩ test == ∅ on (`player_id`, `round`) (`test_partition_exact_cover`).
-  - [ ] `train_pooled` == `train_brockbank` + `train_wxz` rows; same for test (`test_pooled_is_union`).
-  - [ ] No `player_id` appears in both train and test of any dataset (`test_partition_by_player`).
-  - [ ] Test players per dataset == floor(0.2 × players in that dataset) (`test_partition_share`).
-  - [ ] Two calls of `partition(df)` with the default seed return equal frames (`test_partition_deterministic`).
-  - [ ] Each output frame has exactly the master columns, in the same order (`test_partition_columns`).
-  - [ ] `git check-ignore data/processed/rps_human_combined.csv` exits 0.
+  - [x] `jupyter nbconvert --to notebook --execute --inplace notebooks/clean_data.ipynb` exits 0 and writes the 6 partition files listed under Decisions.
+  - [x] `write_partitions` on a synthetic master in `tmp_path` leaves the master's SHA-256 unchanged and writes the 6 files (`tests/test_partitions.py::test_master_unchanged`).
+  - [x] For each dataset, train ∪ test rows == master rows of that dataset and train ∩ test == ∅ on (`player_id`, `round`) (`test_partition_exact_cover`).
+  - [x] `train_pooled` == `train_brockbank` + `train_wxz` rows; same for test (`test_pooled_is_union`).
+  - [x] No `player_id` appears in both train and test of any dataset (`test_partition_by_player`).
+  - [x] Test players per dataset == floor(0.2 × players in that dataset) (`test_partition_share`).
+  - [x] Two calls of `partition(df)` with the default seed return equal frames (`test_partition_deterministic`).
+  - [x] Each output frame has exactly the master columns, in the same order (`test_partition_columns`).
+  - [x] `git check-ignore data/processed/rps_human_combined.csv` exits 0.
   - Tests use synthetic data; none depend on files under `data/`.
 - **Doc deltas:** `data/README.md`: `partitions/` folder, rule, file list; master is never overwritten by partitioning.
 
