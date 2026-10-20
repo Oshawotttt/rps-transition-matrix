@@ -146,12 +146,12 @@ CLI: `python -m rps_markov.markov --csv <file> [<file> ...] --out data/processed
   - "just do k=3" (user).
   - A history uses only consecutive valid rounds of the same `player_id`; it never spans a missing round (user; code: `notebooks/clean_data.ipynb` drops invalid rounds).
 - **Acceptance criteria:**
-  - [ ] `state_labels(1) == TOKENS`, `len(state_labels(3)) == 729`, `state_labels(2)[1] == "RW-RL"` (`tests/test_markov.py::test_state_labels`).
-  - [ ] `load_rounds` on a CSV missing `outcome` raises `ValueError` (`test_load_rounds_missing_column`).
-  - [ ] Synthetic player, rounds 1–4, (move, outcome) = (R,win),(P,lose),(S,tie),(R,win), k=2: rows at rounds 3, 4 get `RW-PL`, `PL-ST`; rounds 1, 2 dropped (`test_add_history_basic`).
-  - [ ] Synthetic player with rounds 1, 2, 4, 5, 6, k=2: rounds 4, 5 dropped, round 6 kept with state from rounds 4, 5 (`test_add_history_gap`).
-  - [ ] Two players' sequences never mix (`test_add_history_players_separate`).
-  - [ ] Real master, k=1: `state` equals `prev_move + OUTCOMES[prev_outcome]` on every row with a `prev_move` (`test_add_history_matches_prev_columns`, skipped if CSV absent).
+  - [x] `state_labels(1) == TOKENS`, `len(state_labels(3)) == 729`, `state_labels(2)[1] == "RW-RL"` (`tests/test_markov.py::test_state_labels`).
+  - [x] `load_rounds` on a CSV missing `outcome` raises `ValueError` (`test_load_rounds_missing_column`).
+  - [x] Synthetic player, rounds 1–4, (move, outcome) = (R,win),(P,lose),(S,tie),(R,win), k=2: rows at rounds 3, 4 get `RW-PL`, `PL-ST`; rounds 1, 2 dropped (`test_add_history_basic`).
+  - [x] Synthetic player with rounds 1, 2, 4, 5, 6, k=2: rounds 4, 5 dropped, round 6 kept with state from rounds 4, 5 (`test_add_history_gap`).
+  - [x] Two players' sequences never mix (`test_add_history_players_separate`).
+  - [x] Real master, k=1: `state` equals `prev_move + OUTCOMES[prev_outcome]` on every row with a `prev_move` (`test_add_history_matches_prev_columns`, skipped if CSV absent).
 - **Doc deltas:** `README.md`: setup (`pip install -r requirements.txt`), test command, state token definition, note that `data/` is gitignored and rebuilt by the notebook.
 
 ### S3 — TransitionMatrix object (column picture)
