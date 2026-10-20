@@ -2,19 +2,49 @@
 
 k-Markov transition matrices for human rock-paper-scissors moves.
 
-Docs: [architecture](docs/ARCHITECTURE.md), [contracts](docs/CONTRACTS.md), [glossary](GLOSSARY.md).
-
 ## Setup
 
+`data/` is gitignored, so build the dataset before computing any matrix.
+
+1. Install the dependencies:
+
+   ```
+   pip install -r requirements.txt
+   ```
+
+2. Download the two raw files into `data/raw/`:
+   - `rps_v1_data.csv`, Brockbank & Vul (2021): https://raw.githubusercontent.com/erik-brockbank/rps-games-analysis/master/data/rps_v1_data.csv
+   - `WXZ2014.rda`, Wang, Xu & Zhou (2014): download https://cran.r-project.org/src/contrib/Archive/stratEst/stratEst_1.1.6.tar.gz, then extract the one file and move it into place:
+
+     ```
+     tar -xzf stratEst_1.1.6.tar.gz stratEst/data/WXZ2014.rda
+     mv stratEst/data/WXZ2014.rda data/raw/
+     ```
+
+3. Run the cleaning notebook. It writes `data/processed/rps_human_combined.csv` and the train/test files in `data/processed/partitions/`:
+
+   ```
+   jupyter nbconvert --to notebook --execute --inplace notebooks/clean_data.ipynb
+   ```
+
+Sources and licences: [data/README.md](data/README.md).
+
+## Quick start: P for k = 1
+
 ```
-pip install -r requirements.txt
+PYTHONPATH=src python -m rps_markov.markov --csv data/processed/rps_human_combined.csv --out data/processed/transition_matrices/k1 --k 1
 ```
 
-`data/` is gitignored. Rebuild `data/processed/` by running the notebook (the raw files in `data/raw/` must be present):
+PowerShell: run `$env:PYTHONPATH = "src"` first, then the same command without the `PYTHONPATH=src` prefix.
 
-```
-jupyter nbconvert --to notebook --execute --inplace notebooks/clean_data.ipynb
-```
+This writes `P_rps_human_combined.csv` (probabilities) and `N_rps_human_combined.csv` (counts). Output files are named after the input CSV, not k, so give each k its own `--out` folder. `--csv` takes several files; `--k` defaults to 3.
+
+## Model
+
+- A token is one round: the player's move (`R`, `P`, `S`) plus their outcome (`W`, `L`, `T`). There are 9 tokens.
+- A k-state is the player's last k tokens, e.g. `RW-PL-ST`. There are 9^k states.
+- N is 3 × 9^k: rows are the next move (R, P, S), columns are k-states, entries are counts.
+- P = (N + alpha) / column sums, with alpha = 1 by default. Each column sums to 1, and a state never seen gives [1/3, 1/3, 1/3].
 
 ## Tests
 
@@ -22,58 +52,9 @@ jupyter nbconvert --to notebook --execute --inplace notebooks/clean_data.ipynb
 python -m pytest
 ```
 
-## States
+## Docs
 
-One round of a player gives a token: their move (`R`, `P`, `S`) followed by their outcome (`W` win, `L` lose, `T` tie). The 9 tokens, in order: `RW, RL, RT, PW, PL, PT, SW, SL, ST`.
-
-A k-state is the player's last k tokens joined by `-`, oldest first, e.g. `RW-PL-ST` for k = 3. There are 9^k states. A history only uses consecutive rounds of the same player: a row whose previous k rounds are not all present has no state.
-
-Code examples run from the repo root with `src` on `PYTHONPATH`.
-
-```python
-from rps_markov.markov import add_history, load_rounds
-
-df = load_rounds("data/processed/partitions/train_pooled.csv")
-hist = add_history(df, k=3)  # adds column "state"; drops rows without k gap-free prior rounds
-```
-
-## Transition matrix
-
-`TransitionMatrix(k, alpha)` counts, over every row of a CSV, which move a player makes next after each k-state.
-
-- `counts`: shape 3 × 9^k. Rows = next move `R, P, S`; columns = k-states in `state_labels(k)` order.
-- `P`: `(counts + alpha) / column sums`. Each column sums to 1 (column-stochastic). With the default `alpha = 1`, a state never seen gives `[1/3, 1/3, 1/3]`.
-- `column(state)` = `P e_j`, the next-move distribution for state j.
-- `predict(x)` = `P x`, the next-move distribution for a belief x over the 9^k states.
-
-Fit on a train partition, predict on the matching test partition:
-
-```python
-from rps_markov.markov import TransitionMatrix, add_history, load_rounds
-
-tm = TransitionMatrix.from_csv("data/processed/partitions/train_pooled.csv", k=3)
-test = add_history(load_rounds("data/processed/partitions/test_pooled.csv"), k=3)
-probs = [tm.column(s) for s in test["state"]]  # P(R), P(P), P(S) for each test row
-
-tm.save("data/processed/transition_matrices/N_train_pooled.csv")  # counts; reload with TransitionMatrix.load(path)
-tm.to_frame()                                  # P as a DataFrame: index R, P, S; columns = states
-```
-
-Pick the dataset by picking the file: `train_brockbank.csv`, `train_wxz.csv` or `train_pooled.csv`.
-
-## CLI
-
-Write the k = 3 matrices for one or more CSVs, e.g. the three train partitions:
-
-```
-PYTHONPATH=src python -m rps_markov.markov \
-  --csv data/processed/partitions/train_brockbank.csv data/processed/partitions/train_wxz.csv data/processed/partitions/train_pooled.csv \
-  --out data/processed/transition_matrices
-```
-
-For each input `<name>.csv` it writes to `--out`:
-
-- `N_<name>.csv`: counts. Header `move,<state>,...`; 3 rows `R, P, S`; 729 state columns. Reload with `TransitionMatrix.load(path)`.
-- `P_<name>.csv`: probabilities, same layout; each column sums to 1.
-
-`--k` (default 3) sets the history length.
+- [Architecture](docs/ARCHITECTURE.md)
+- [Contracts](docs/CONTRACTS.md): file formats and rules
+- [Glossary](GLOSSARY.md)
+- [Presentation outline](docs/OUTLINE.md)
