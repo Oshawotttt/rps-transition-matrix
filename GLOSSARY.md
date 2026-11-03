@@ -10,12 +10,20 @@
 
 **Token**: one round of one player as their move followed by their outcome, e.g. `RW` (rock, win); 9 in all.
 
-**k-state**: a player's last k tokens joined by `-`, oldest first, e.g. `RW-PL-ST`; 9^k in all.
+**State**: a player's previous round as a token, e.g. `PL`; 9 in all. Everything is k = 1.
 
-**History**: the k consecutive prior rounds of the same player that give a row its k-state; a row without them has no history.
+**Move state**: a player's previous move alone (`R`, `P`, `S`); the 3 × 3 matrix is built by summing the 3 × 9 counts over the outcome.
 
-**Counts (N)**: the 3 × 9^k matrix of how often each next move followed each k-state.
+**History**: the previous round of the same player that gives a row its state; a row without it has no history.
 
-**Transition matrix (P)**: the 3 × 9^k column-stochastic matrix of next-move probabilities; column j is the next-move distribution after state j.
+**Counts (N)**: the 3 × 9 matrix of how often each next move followed each state. Held by `Counts`; the only persisted matrix.
+
+**Transition matrix (P)**: the column-stochastic matrix of next-move probabilities, derived from N and alpha; column j is the next-move distribution after state j. Never persisted.
 
 **Smoothing (alpha)**: the pseudo-count added to every cell of N before normalising, so an unseen state gives a uniform column.
+
+**Steady state (π)**: for a square P, the eigenvector for eigenvalue 1, normalised to sum to 1; the long-run share of each state. Not defined (an error) when eigenvalue 1 is repeated.
+
+**Payoff matrix (A)**: the fixed 3 × 3 matrix of the bot's score (+1 win, 0 tie, −1 loss); rows are bot moves, columns are human moves.
+
+**Human-vs-bot chain**: the 9 × 9 column-stochastic matrix over tokens for one human playing the best-move bot.

@@ -10,13 +10,17 @@ data/processed/rps_human_combined.csv            (master)
   │  notebook section 6 → rps_markov.partition.write_partitions
   ▼
 data/processed/partitions/{train,test}_{brockbank,wxz,pooled}.csv
-  │  rps_markov.markov: load_rounds → add_history → TransitionMatrix.fit
-  │  (CLI: python -m rps_markov.markov)
+  │  rps_markov.count: load_rounds → add_history → count
+  │  (CLI: python -m rps_markov.count)
   ▼
-data/processed/transition_matrices/N_<name>.csv, P_<name>.csv
+data/processed/transition_matrices/N_<name>.csv   (counts; the only persisted matrix)
+  │  Counts.load → <matrix class>   (in memory, lazy, cached)
+  ▼
+P: OutcomeTransitionMatrix (3 × 9), BasicTransitionMatrix (3 × 3),
+   BotMatchTransitionMatrix (9 × 9, built with PayoffMatrix A)
 ```
 
-`data/` is gitignored. Every file under it is rebuilt by running the notebook and then the CLI.
+`data/` is gitignored. Every file under it is rebuilt by running the notebook and then the CLI. P, the 9 × 9 and A are never written to disk.
 
 ## Modules
 
@@ -24,7 +28,10 @@ data/processed/transition_matrices/N_<name>.csv, P_<name>.csv
 |---|---|
 | `notebooks/clean_data.ipynb` | Cleans and combines the two raw datasets into the master; section 6 writes the partitions. |
 | `src/rps_markov/partition.py` | Splits the master into train/test copies by player. Pure pandas/numpy; the notebook is its only caller. |
-| `src/rps_markov/markov.py` | Loads master-format CSVs, builds k-state histories, counts transitions (`TransitionMatrix`), and holds the CLI. |
+| `src/rps_markov/count.py` | Loads master-format CSVs, builds the previous-token history, counts N and holds the CLI. Counting only; no matrices. |
+| `src/rps_markov/matrix.py` | `Matrix`, the abstract labelled-matrix base (`rows`, `columns`, `values`, `to_frame`, `@`). |
+| `src/rps_markov/markov.py` | `Counts` (loads and holds N, read-only) and the transition matrices built from it: `TransitionMatrix` base, `OutcomeTransitionMatrix`, `SquareTransitionMatrix`, `BasicTransitionMatrix`, `BotMatchTransitionMatrix`. |
+| `src/rps_markov/payoff.py` | `PayoffMatrix`: the fixed 3 × 3 payoff A and the bot's best move. |
 
 Signatures and file layouts are in [CONTRACTS.md](CONTRACTS.md); terms in [GLOSSARY.md](../GLOSSARY.md).
 
@@ -35,10 +42,14 @@ Signatures and file layouts are in [CONTRACTS.md](CONTRACTS.md); terms in [GLOSS
 - The pooled partition is the brockbank rows followed by the wxz rows of the same split. Brockbank and wxz `player_id`s don't overlap, so pooling never joins two players' histories.
 - A history uses only consecutive rounds of the same `player_id`; it never spans a missing round. The notebook drops invalid rounds, so a dropped round breaks the history.
 - The counter has no row or dataset filter: it counts every row of the CSV it is given. Picking a partition file picks the dataset.
+- Counting, holding counts and building matrices are separate: `count.py` writes N, `Counts` holds it, and matrix classes take a `Counts` and never load or count. The caller picks the matrix class.
+- Matrix classes depend only on the N format, never on which dataset or player an N file came from.
+- P and every derived matrix or value is computed on first access and cached; `Counts.values` is read-only so the cache cannot go stale.
+- `BotMatchTransitionMatrix` takes an `OutcomeTransitionMatrix` and a `PayoffMatrix`; the bot's move in each state is computed from P and A, so it needs no data of its own.
+- Everything is k = 1: the counting script, the N files and every matrix class.
 
 ## Not included
 
 - No evaluation (accuracy, log-loss) on the test split: that is done outside this repo.
-- No square 9^k × 9^k chain, matrix powers, stationary vector, SVD or least-squares check: only the 3 × 9^k `P`.
-- No bot play, game simulation, plots or presentation visuals.
-- The CLI is run for k = 3 only; `k` stays a parameter in the code.
+- The only square matrices are `BasicTransitionMatrix` (3 × 3) and `BotMatchTransitionMatrix` (9 × 9). No k ≠ 1, no matrix powers or absorbing chains, no SVD or least-squares check.
+- No live bot play, demo frontend, round-1 fallback, collection of the friend's rounds, plots or presentation visuals.

@@ -1,6 +1,6 @@
 # rps-transition-matrix
 
-k-Markov transition matrices for human rock-paper-scissors moves.
+Markov transition matrices (previous round → next move) for human rock-paper-scissors moves.
 
 ## Setup
 
@@ -29,22 +29,31 @@ k-Markov transition matrices for human rock-paper-scissors moves.
 
 Sources and licences: [data/README.md](data/README.md).
 
-## Quick start: P for k = 1
+## Quick start: counts and P
 
 ```
-PYTHONPATH=src python -m rps_markov.markov --csv data/processed/rps_human_combined.csv --out data/processed/transition_matrices/k1 --k 1
+PYTHONPATH=src python -m rps_markov.count --csv data/processed/rps_human_combined.csv --out data/processed/transition_matrices
 ```
 
 PowerShell: run `$env:PYTHONPATH = "src"` first, then the same command without the `PYTHONPATH=src` prefix.
 
-This writes `P_rps_human_combined.csv` (probabilities) and `N_rps_human_combined.csv` (counts). Output files are named after the input CSV, not k, so give each k its own `--out` folder. `--csv` takes several files; `--k` defaults to 3.
+This writes `N_rps_human_combined.csv` (counts) only; output files are named after the input CSV, and `--csv` takes several files. P is derived from N when needed and never written:
+
+```
+counts = Counts.load("data/processed/transition_matrices/N_rps_human_combined.csv")
+OutcomeTransitionMatrix(counts)   # 3 x 9
+BasicTransitionMatrix(counts)     # 3 x 3
+```
 
 ## Model
 
 - A token is one round: the player's move (`R`, `P`, `S`) plus their outcome (`W`, `L`, `T`). There are 9 tokens.
-- A k-state is the player's last k tokens, e.g. `RW-PL-ST`. There are 9^k states.
-- N is 3 × 9^k: rows are the next move (R, P, S), columns are k-states, entries are counts.
-- P = (N + alpha) / column sums, with alpha = 1 by default. Each column sums to 1, and a state never seen gives [1/3, 1/3, 1/3].
+- A state is the player's previous token, e.g. `PL`. There are 9 states (k = 1 everywhere).
+- N is 3 × 9: rows are the next move (R, P, S), columns are states, entries are counts.
+- `OutcomeTransitionMatrix`: P = (N + alpha) / column sums, 3 × 9, with alpha = 1 by default. Each column sums to 1, and a state never seen gives [1/3, 1/3, 1/3].
+- `BasicTransitionMatrix`: the 3 × 3 P (previous move → next move), from the same N file by summing the outcome out. Its eigenvalues and steady state π are `eigenvalues` and `stationary`.
+- `PayoffMatrix`: the fixed 3 × 3 payoff A, which picks the bot's best move against a predicted distribution.
+- `BotMatchTransitionMatrix(OutcomeTransitionMatrix(counts), PayoffMatrix())`: the 9 × 9 chain of one human against the best-move bot; `outcome_rates` gives the long-run win, lose and tie rates from the human's side.
 
 ## Tests
 
