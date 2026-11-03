@@ -3,8 +3,9 @@ import pandas as pd
 import pytest
 
 from rps_markov.count import MOVES, TOKENS, count, load_rounds
-from rps_markov.markov import (BasicTransitionMatrix, Counts, OutcomeTransitionMatrix, SquareTransitionMatrix,
-                               TransitionMatrix)
+from rps_markov.markov import (BasicTransitionMatrix, BotMatchTransitionMatrix, Counts, OutcomeTransitionMatrix,
+                               SquareTransitionMatrix, TransitionMatrix)
+from rps_markov.payoff import PayoffMatrix
 from rps_markov.matrix import Matrix
 from test_count import BASIC, rounds, run_cli, synthetic_rounds, write_inputs
 
@@ -186,3 +187,51 @@ def test_square_matrix_kinds():
     tm = OutcomeTransitionMatrix(zero_counts())
     assert not hasattr(tm, "eigenvalues")
     assert not hasattr(tm, "stationary")
+
+
+def bot_match(counts, alpha=1.0):
+    return BotMatchTransitionMatrix(OutcomeTransitionMatrix(counts, alpha), PayoffMatrix())
+
+
+def test_bot_match_shape():
+    P = bot_match(Counts(count(synthetic_rounds(seed=7)))).P
+
+    assert P.shape == (9, 9)
+    np.testing.assert_allclose(P.sum(axis=0), 1, rtol=0, atol=1e-12)
+    assert ((P != 0).sum(axis=0) == 3).all()
+
+
+def test_bot_match_hand_checked_column():
+    tm = bot_match(Counts(count(rounds("a", BASIC))))
+    column = tm.to_frame()["RW"]
+
+    # human after RW: [0.25, 0.5, 0.25]; bot scores [-0.25, 0, 0.25] -> bot plays S
+    # human R beats S (RW), P loses to S (PL), S ties S (ST)
+    assert sorted(column[column != 0].index) == ["PL", "RW", "ST"]
+    np.testing.assert_allclose(column[["RW", "PL", "ST"]], [0.25, 0.5, 0.25])
+    assert tm.rows == tm.states == TOKENS
+
+
+def test_bot_match_uniform_human_rates():
+    rates = bot_match(zero_counts()).outcome_rates
+
+    assert set(rates) == {"win", "lose", "tie"}
+    for rate in rates.values():
+        assert rate == pytest.approx(1 / 3)
+
+
+def test_bot_match_rates_from_stationary():
+    tm = bot_match(Counts(count(synthetic_rounds(seed=7))))
+    pi = pd.Series(tm.stationary, index=TOKENS)
+
+    assert sum(tm.outcome_rates.values()) == pytest.approx(1)
+    for outcome, letter in [("win", "W"), ("lose", "L"), ("tie", "T")]:
+        assert tm.outcome_rates[outcome] == pytest.approx(pi[[t for t in TOKENS if t.endswith(letter)]].sum())
+
+
+def test_bot_match_kind():
+    counts = Counts(count(synthetic_rounds()))
+
+    assert isinstance(bot_match(counts), SquareTransitionMatrix)
+    with pytest.raises(TypeError):
+        BotMatchTransitionMatrix(BasicTransitionMatrix(counts), PayoffMatrix())

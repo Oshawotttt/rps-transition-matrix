@@ -192,13 +192,15 @@ Doc delta to `docs/CONTRACTS.md` on the subtask named in brackets.
   - Construction: for state s, bot move b = `payoff.best_move(outcome_matrix.P[:, s])`; for each human next move m, `P[token(m, outcome of m vs b), s] = outcome_matrix.P[m, s]`; all other entries 0 (`docs/PRESENTATION-FLOW.md` 2.3). Doc delta.
   - It is a `SquareTransitionMatrix`, so it also has `eigenvalues`. `outcome_rates` is from the human's side (the bot's win rate is the human's `lose`): `stationary` summed over the `*W`, `*L`, `*T` tokens. Doc delta.
 - **Acceptance criteria:**
-  - [ ] New test: on synthetic counts, `P` is 9 × 9, columns sum to 1 (atol 1e-12), exactly 3 nonzero entries per column (alpha > 0). `python -m pytest tests/test_markov.py`
-  - [ ] New test: for one hand-checked state, the 3 nonzero rows of column s are the tokens given by m vs `best_move(outcome_matrix.P[:, s])`, with values `outcome_matrix.P[:, s]`. Same command.
-  - [ ] New test: zero counts (uniform `outcome_matrix.P`) give `outcome_rates` ≈ 1/3 each. Same command.
-  - [ ] New test: `outcome_rates` sums to 1 and equals `stationary` summed over `*W`, `*L`, `*T`. Same command.
-  - [ ] New test: `isinstance(..., SquareTransitionMatrix)`; passing a `BasicTransitionMatrix` as `outcome_matrix` raises `TypeError`. Same command.
-  - [ ] Full suite passes. `python -m pytest`
+  - [x] New test: on synthetic counts, `P` is 9 × 9, columns sum to 1 (atol 1e-12), exactly 3 nonzero entries per column (alpha > 0). `python -m pytest tests/test_markov.py`
+  - [x] New test: for one hand-checked state, the 3 nonzero rows of column s are the tokens given by m vs `best_move(outcome_matrix.P[:, s])`, with values `outcome_matrix.P[:, s]`. Same command.
+  - [x] New test: zero counts (uniform `outcome_matrix.P`) give `outcome_rates` ≈ 1/3 each. Same command.
+  - [x] New test: `outcome_rates` sums to 1 and equals `stationary` summed over `*W`, `*L`, `*T`. Same command.
+  - [x] New test: `isinstance(..., SquareTransitionMatrix)`; passing a `BasicTransitionMatrix` as `outcome_matrix` raises `TypeError`. Same command.
+  - [x] Full suite passes. `python -m pytest`
 - **Doc deltas:**
+  - Decision (made in S5): the outcome of human move m against bot move b is read from the payoff, `A[b, m]` (+1 → human `L`, 0 → `T`, −1 → `W`), not from a separate beats table, so A is the single source of who wins. `docs/CONTRACTS.md` "Transition matrix".
+  - Decision (made in S5): the `TypeError` for a non-`OutcomeTransitionMatrix` comes from an explicit `isinstance` check in the constructor; P itself is built lazily on first access. `docs/CONTRACTS.md` "Transition matrix".
   - `docs/CONTRACTS.md` "Transition matrix": `BotMatchTransitionMatrix`, the construction rule, `TOKENS` order, `outcome_rates` from the human's side.
   - `docs/ARCHITECTURE.md` "Not included": replace the line on square chains and bot play with: the only square matrices are `BasicTransitionMatrix` (3 × 3) and `BotMatchTransitionMatrix` (9 × 9); no k ≠ 1, no matrix powers or absorbing chains, no live bot play, demo frontend or data collection.
   - `GLOSSARY.md`: add "Human-vs-bot chain": the 9 × 9 column-stochastic matrix over tokens for one human against the best-move bot.

@@ -5,8 +5,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from rps_markov.count import MOVES, TOKENS
+from rps_markov.count import MOVES, OUTCOMES, TOKENS
 from rps_markov.matrix import Matrix
+from rps_markov.payoff import PayoffMatrix
 
 
 class Counts:
@@ -100,3 +101,34 @@ class BasicTransitionMatrix(SquareTransitionMatrix):
     def values(self) -> np.ndarray:
         smoothed = self._counts + self.alpha
         return smoothed / smoothed.sum(axis=0)
+
+
+class BotMatchTransitionMatrix(SquareTransitionMatrix):
+    """9 x 9 chain over tokens: one human (an OutcomeTransitionMatrix) against the bot that plays best_move in every state."""
+
+    def __init__(self, outcome_matrix: OutcomeTransitionMatrix, payoff: PayoffMatrix) -> None:
+        if not isinstance(outcome_matrix, OutcomeTransitionMatrix):
+            raise TypeError(f"outcome_matrix must be an OutcomeTransitionMatrix, got {type(outcome_matrix).__name__}")
+        self.rows = TOKENS
+        self.columns = TOKENS
+        self.outcome_matrix = outcome_matrix
+        self.payoff = payoff
+
+    @cached_property
+    def values(self) -> np.ndarray:
+        human = self.outcome_matrix.P
+        # human letter by bot score: the bot winning (+1) is the human's L
+        letter = {1: OUTCOMES["lose"], 0: OUTCOMES["tie"], -1: OUTCOMES["win"]}
+        P = np.zeros((len(TOKENS), len(TOKENS)))
+        for s in range(len(TOKENS)):
+            b = MOVES.index(self.payoff.best_move(human[:, s]))
+            for m, move in enumerate(MOVES):
+                P[TOKENS.index(move + letter[self.payoff.A[b, m]]), s] = human[m, s]
+        return P
+
+    @cached_property
+    def outcome_rates(self) -> dict[str, float]:
+        """Long-run win, lose and tie rates from the human's side: stationary summed over the *W, *L, *T tokens."""
+        pi = self.stationary
+        return {outcome: float(sum(pi[j] for j, t in enumerate(TOKENS) if t.endswith(letter)))
+                for outcome, letter in OUTCOMES.items()}
