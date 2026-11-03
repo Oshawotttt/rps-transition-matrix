@@ -169,12 +169,13 @@ Doc delta to `docs/CONTRACTS.md` on the subtask named in brackets.
   - "3×3 payoff A: +1 win, 0 tie, −1 loss ... It is fixed, so no data is needed. Rows are bot moves and columns are human moves." (user). Doc delta.
   - Score ties go to the first move in `R, P, S` order. Doc delta.
 - **Acceptance criteria:**
-  - [ ] New test: `PayoffMatrix().A` equals `[[0, -1, 1], [1, 0, -1], [-1, 1, 0]]`. `python -m pytest tests/test_payoff.py`
-  - [ ] New test: `isinstance(PayoffMatrix(), Matrix)`; `A is values`; rows and columns `MOVES`; `scores(q)` equals `PayoffMatrix() @ q`. Same command.
-  - [ ] New test: `best_move([1, 0, 0]) == "P"`, `best_move([0, 1, 0]) == "S"`, `best_move([0, 0, 1]) == "R"`. Same command.
-  - [ ] New test: `best_move([0.45, 0.11, 0.44]) == "R"` (scores `[0.33, 0.01, -0.34]`), although the counter to the most likely move (R) is P. Same command.
-  - [ ] New test: `best_move([1/3, 1/3, 1/3]) == "R"`. Same command.
+  - [x] New test: `PayoffMatrix().A` equals `[[0, -1, 1], [1, 0, -1], [-1, 1, 0]]`. `python -m pytest tests/test_payoff.py`
+  - [x] New test: `isinstance(PayoffMatrix(), Matrix)`; `A is values`; rows and columns `MOVES`; `scores(q)` equals `PayoffMatrix() @ q`. Same command.
+  - [x] New test: `best_move([1, 0, 0]) == "P"`, `best_move([0, 1, 0]) == "S"`, `best_move([0, 0, 1]) == "R"`. Same command.
+  - [x] New test: `best_move([0.45, 0.11, 0.44]) == "R"` (scores `[0.33, 0.01, -0.34]`), although the counter to the most likely move (R) is P. Same command.
+  - [x] New test: `best_move([1/3, 1/3, 1/3]) == "R"`. Same command.
 - **Doc deltas:**
+  - Decision (made in S4): `A` is an int array, and a tie in `best_move` means exactly equal scores (`np.argmax`, no tolerance). `docs/CONTRACTS.md` "Payoff".
   - `docs/CONTRACTS.md`: new "Payoff" section (section 4 shape).
   - `docs/ARCHITECTURE.md` modules table: `src/rps_markov/payoff.py`.
   - `GLOSSARY.md`: add "Payoff matrix (A)".
