@@ -63,7 +63,7 @@ Doc delta to `docs/CONTRACTS.md` on the subtask named in brackets.
     - `P: np.ndarray`: the same array as `values` (cached; column-stochastic).
     - `column(state) -> np.ndarray` (`KeyError` on an unknown label), `predict(x) -> np.ndarray` (`P @ x`).
   - `OutcomeTransitionMatrix(counts: Counts, alpha: float = 1.0)` [S1]: 3 × 9. rows `MOVES`, states `TOKENS`. `P = (N + alpha) / column sums`.
-  - `SquareTransitionMatrix(TransitionMatrix)` [S3]: abstract; `rows == states`. Adds `eigenvalues: np.ndarray` (cached, complex, sorted by modulus descending) and `stationary: np.ndarray` (cached, real, the eigenvalue-1 eigenvector normalised to sum 1).
+  - `SquareTransitionMatrix(TransitionMatrix)` [S3]: abstract; `rows == states`. Adds `eigenvalues: np.ndarray` (cached, complex, sorted by modulus descending) and `stationary: np.ndarray` (cached, real, the eigenvalue-1 eigenvector normalised to sum 1; `ValueError` if eigenvalue 1 is repeated, since π is then not unique; `outcome_rates` raises the same).
   - `BasicTransitionMatrix(counts: Counts, alpha: float = 1.0)` [S2 as a `TransitionMatrix`; S3 makes it a `SquareTransitionMatrix`]: 3 × 3. rows and states `MOVES`. The constructor collapses the 3 × 9 N to a 3 × 3 move-count matrix M: column `m` of M = the sum of N's columns `mW`, `mL`, `mT`. `P = (M + alpha) / column sums`.
   - `BotMatchTransitionMatrix(outcome_matrix: OutcomeTransitionMatrix, payoff: PayoffMatrix)` [S5]: `SquareTransitionMatrix`, 9 × 9, rows and states `TOKENS`. Adds `outcome_rates: dict[str, float]` (cached; keys `win`, `lose`, `tie`, human's side, sum 1).
 - `src/rps_markov/payoff.py` [S4]: `PayoffMatrix()`, a `Matrix`; rows and columns `MOVES`; `A: np.ndarray`, the same array as `values`, = `[[0, -1, 1], [1, 0, -1], [-1, 1, 0]]` (rows = bot move `R, P, S`, columns = human move `R, P, S`; +1 bot wins, 0 tie, −1 bot loses).
@@ -153,6 +153,7 @@ Doc delta to `docs/CONTRACTS.md` on the subtask named in brackets.
   - [x] Full suite passes. `python -m pytest`
 - **Doc deltas:**
   - Decision (made in S3): `eigenvalues` and `stationary` share one cached `np.linalg.eig` call; the sort is stable, so equal moduli keep NumPy's order. `docs/CONTRACTS.md` "Transition matrix" (order only).
+  - Spec change (code review, approved by the user): `stationary` raises `ValueError` when eigenvalue 1 appears more than once (within 1e-9), because π is then not unique; a reducible 9 × 9 human-vs-bot chain (e.g. states RT/PW/SL all make the bot play R and RW/PL/ST all make it play S) did this and returned an arbitrary π. `eigenvalues` still works. `docs/CONTRACTS.md` "Transition matrix"; `GLOSSARY.md` "Steady state (π)".
   - Decision (made in S3): π is taken from the eigenvector whose eigenvalue is closest to 1, then its real part is divided by its sum, so the sign NumPy returns does not matter. `docs/CONTRACTS.md` "Transition matrix".
   - `docs/CONTRACTS.md` "Transition matrix": `SquareTransitionMatrix`, eigenvalues (order, dtype) and π (null space of P − I, sums to 1).
   - `docs/ARCHITECTURE.md` "Not included": remove "stationary vector".

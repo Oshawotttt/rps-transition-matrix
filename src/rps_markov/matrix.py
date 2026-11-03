@@ -13,10 +13,11 @@ class Matrix(ABC):
 
     @property
     @abstractmethod
-    def values(self) -> np.ndarray: ...
+    def values(self) -> np.ndarray:
+        """The len(rows) x len(columns) array."""
 
     def to_frame(self) -> pd.DataFrame:
         return pd.DataFrame(self.values, index=self.rows, columns=self.columns)
 
-    def __matmul__(self, x) -> np.ndarray:
+    def __matmul__(self, x: np.ndarray) -> np.ndarray:
         return self.values @ np.asarray(x)

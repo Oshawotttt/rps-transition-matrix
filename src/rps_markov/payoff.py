@@ -20,12 +20,13 @@ class PayoffMatrix(Matrix):
 
     @property
     def A(self) -> np.ndarray:
+        """The payoff: the same array as values."""
         return self.values
 
-    def scores(self, q) -> np.ndarray:
+    def scores(self, q: np.ndarray) -> np.ndarray:
         """A @ q: the bot's expected score for each move against a human move distribution q."""
         return self @ q
 
-    def best_move(self, q) -> str:
+    def best_move(self, q: np.ndarray) -> str:
         """The bot move with the highest score against q; the first in R, P, S wins a tie."""
         return self.rows[int(np.argmax(self.scores(q)))]

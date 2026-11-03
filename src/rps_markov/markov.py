@@ -28,15 +28,23 @@ class Counts:
         return cls(pd.read_csv(path, index_col="move"))
 
 
+def _smoothed(counts: np.ndarray, alpha: float) -> np.ndarray:
+    """(counts + alpha) / column sums: column-stochastic, and an all-zero column becomes uniform."""
+    shifted = counts + alpha
+    return shifted / shifted.sum(axis=0)
+
+
 class TransitionMatrix(Matrix):
     """Column-stochastic P: rows = next move, columns = states."""
 
     @property
     def states(self) -> list[str]:
+        """The state labels: the same list as columns."""
         return self.columns
 
     @property
     def P(self) -> np.ndarray:
+        """The transition probabilities: the same array as values."""
         return self.values
 
     def column(self, state: str) -> np.ndarray:
@@ -61,8 +69,7 @@ class OutcomeTransitionMatrix(TransitionMatrix):
 
     @cached_property
     def values(self) -> np.ndarray:
-        smoothed = self._counts + self.alpha
-        return smoothed / smoothed.sum(axis=0)
+        return _smoothed(self._counts, self.alpha)
 
 
 class SquareTransitionMatrix(TransitionMatrix):
@@ -77,12 +84,16 @@ class SquareTransitionMatrix(TransitionMatrix):
 
     @cached_property
     def eigenvalues(self) -> np.ndarray:
+        """Eigenvalues of P, complex, sorted by modulus, largest (1) first."""
         return self._eig[0]
 
     @cached_property
     def stationary(self) -> np.ndarray:
-        """Steady state pi: the eigenvalue-1 eigenvector, real, summing to 1."""
+        """Steady state pi: the eigenvalue-1 eigenvector, real, summing to 1; ValueError if eigenvalue 1 is repeated."""
         eigenvalues, eigenvectors = self._eig
+        ones = np.flatnonzero(np.abs(eigenvalues - 1) < 1e-9)
+        if len(ones) > 1:
+            raise ValueError(f"eigenvalue 1 has multiplicity {len(ones)}, so the steady state is not unique")
         pi = eigenvectors[:, np.argmin(np.abs(eigenvalues - 1))].real
         return pi / pi.sum()
 
@@ -99,8 +110,7 @@ class BasicTransitionMatrix(SquareTransitionMatrix):
 
     @cached_property
     def values(self) -> np.ndarray:
-        smoothed = self._counts + self.alpha
-        return smoothed / smoothed.sum(axis=0)
+        return _smoothed(self._counts, self.alpha)
 
 
 class BotMatchTransitionMatrix(SquareTransitionMatrix):
@@ -117,13 +127,14 @@ class BotMatchTransitionMatrix(SquareTransitionMatrix):
     @cached_property
     def values(self) -> np.ndarray:
         human = self.outcome_matrix.P
-        # human letter by bot score: the bot winning (+1) is the human's L
-        letter = {1: OUTCOMES["lose"], 0: OUTCOMES["tie"], -1: OUTCOMES["win"]}
+        # human outcome letter by bot score: the bot winning (+1) is the human's L
+        letter_by_bot_score = {1: OUTCOMES["lose"], 0: OUTCOMES["tie"], -1: OUTCOMES["win"]}
         P = np.zeros((len(TOKENS), len(TOKENS)))
-        for s in range(len(TOKENS)):
-            b = MOVES.index(self.payoff.best_move(human[:, s]))
-            for m, move in enumerate(MOVES):
-                P[TOKENS.index(move + letter[self.payoff.A[b, m]]), s] = human[m, s]
+        for state in range(len(TOKENS)):
+            bot = MOVES.index(self.payoff.best_move(human[:, state]))
+            for move_index, move in enumerate(MOVES):
+                letter = letter_by_bot_score[self.payoff.A[bot, move_index]]
+                P[TOKENS.index(move + letter), state] = human[move_index, state]
         return P
 
     @cached_property

@@ -235,3 +235,17 @@ def test_bot_match_kind():
     assert isinstance(bot_match(counts), SquareTransitionMatrix)
     with pytest.raises(TypeError):
         BotMatchTransitionMatrix(BasicTransitionMatrix(counts), PayoffMatrix())
+
+
+def test_stationary_rejects_reducible_chain():
+    # human after RT/PW/SL plays S (bot R); after RW/PL/ST plays P (bot S): two closed classes
+    frame = pd.DataFrame(0, index=MOVES, columns=TOKENS)
+    frame.loc["S", ["RT", "PW", "SL"]] = 10
+    frame.loc["P", ["RW", "PL", "ST"]] = 10
+    tm = bot_match(Counts(frame))
+
+    np.testing.assert_allclose(np.abs(tm.eigenvalues[:2]), [1, 1], rtol=0, atol=1e-12)
+    with pytest.raises(ValueError):
+        tm.stationary
+    with pytest.raises(ValueError):
+        tm.outcome_rates
