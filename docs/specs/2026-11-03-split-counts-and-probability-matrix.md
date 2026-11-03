@@ -146,12 +146,14 @@ Doc delta to `docs/CONTRACTS.md` on the subtask named in brackets.
   - Eigenvalues: complex array sorted by modulus descending, so the first is 1. π: eigenvector for eigenvalue 1, real, normalised to sum 1. Doc delta.
   - Both come from NumPy's `np.linalg.eig`; no hand-written eigen solver and no SciPy (user). `transient`.
 - **Acceptance criteria:**
-  - [ ] New test: on synthetic counts, `BasicTransitionMatrix.eigenvalues[0]` ≈ 1 (atol 1e-12), sorted by modulus descending, other moduli < 1. `python -m pytest tests/test_markov.py`
-  - [ ] New test: `P @ stationary` ≈ `stationary`, sums to 1, all entries > 0. Same command.
-  - [ ] New test: zero counts (uniform P) give eigenvalues ≈ `[1, 0, 0]` and `stationary` ≈ `[1/3, 1/3, 1/3]`. Same command.
-  - [ ] New test: `isinstance(BasicTransitionMatrix(...), SquareTransitionMatrix)`; `OutcomeTransitionMatrix` has no `eigenvalues` or `stationary` attribute. Same command.
-  - [ ] Full suite passes. `python -m pytest`
+  - [x] New test: on synthetic counts, `BasicTransitionMatrix.eigenvalues[0]` ≈ 1 (atol 1e-12), sorted by modulus descending, other moduli < 1. `python -m pytest tests/test_markov.py`
+  - [x] New test: `P @ stationary` ≈ `stationary`, sums to 1, all entries > 0. Same command.
+  - [x] New test: zero counts (uniform P) give eigenvalues ≈ `[1, 0, 0]` and `stationary` ≈ `[1/3, 1/3, 1/3]`. Same command.
+  - [x] New test: `isinstance(BasicTransitionMatrix(...), SquareTransitionMatrix)`; `OutcomeTransitionMatrix` has no `eigenvalues` or `stationary` attribute. Same command.
+  - [x] Full suite passes. `python -m pytest`
 - **Doc deltas:**
+  - Decision (made in S3): `eigenvalues` and `stationary` share one cached `np.linalg.eig` call; the sort is stable, so equal moduli keep NumPy's order. `docs/CONTRACTS.md` "Transition matrix" (order only).
+  - Decision (made in S3): π is taken from the eigenvector whose eigenvalue is closest to 1, then its real part is divided by its sum, so the sign NumPy returns does not matter. `docs/CONTRACTS.md` "Transition matrix".
   - `docs/CONTRACTS.md` "Transition matrix": `SquareTransitionMatrix`, eigenvalues (order, dtype) and π (null space of P − I, sums to 1).
   - `docs/ARCHITECTURE.md` "Not included": remove "stationary vector".
   - `GLOSSARY.md`: add "Steady state (π)".

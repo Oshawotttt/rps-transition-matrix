@@ -64,7 +64,29 @@ class OutcomeTransitionMatrix(TransitionMatrix):
         return smoothed / smoothed.sum(axis=0)
 
 
-class BasicTransitionMatrix(TransitionMatrix):
+class SquareTransitionMatrix(TransitionMatrix):
+    """A TransitionMatrix whose rows are its states, so it is a Markov chain with eigenvalues and a steady state."""
+
+    @cached_property
+    def _eig(self) -> tuple[np.ndarray, np.ndarray]:
+        """Eigenvalues (complex) and eigenvectors, sorted by eigenvalue modulus, largest first."""
+        eigenvalues, eigenvectors = np.linalg.eig(self.P)
+        order = np.argsort(-np.abs(eigenvalues), kind="stable")
+        return eigenvalues[order].astype(complex), eigenvectors[:, order]
+
+    @cached_property
+    def eigenvalues(self) -> np.ndarray:
+        return self._eig[0]
+
+    @cached_property
+    def stationary(self) -> np.ndarray:
+        """Steady state pi: the eigenvalue-1 eigenvector, real, summing to 1."""
+        eigenvalues, eigenvectors = self._eig
+        pi = eigenvectors[:, np.argmin(np.abs(eigenvalues - 1))].real
+        return pi / pi.sum()
+
+
+class BasicTransitionMatrix(SquareTransitionMatrix):
     """3 x 3: next move given the previous move; P = (M + alpha) / column sums."""
 
     def __init__(self, counts: Counts, alpha: float = 1.0) -> None:

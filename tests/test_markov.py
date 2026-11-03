@@ -3,7 +3,8 @@ import pandas as pd
 import pytest
 
 from rps_markov.count import MOVES, TOKENS, count, load_rounds
-from rps_markov.markov import BasicTransitionMatrix, Counts, OutcomeTransitionMatrix, TransitionMatrix
+from rps_markov.markov import (BasicTransitionMatrix, Counts, OutcomeTransitionMatrix, SquareTransitionMatrix,
+                               TransitionMatrix)
 from rps_markov.matrix import Matrix
 from test_count import BASIC, rounds, run_cli, synthetic_rounds, write_inputs
 
@@ -147,3 +148,41 @@ def test_basic_matrix_shape():
     assert tm.P.shape == (3, 3)
     np.testing.assert_allclose(tm.P.sum(axis=0), 1, rtol=0, atol=1e-12)
     assert tm.rows == tm.states == MOVES
+
+
+def zero_counts():
+    return Counts(pd.DataFrame(0, index=MOVES, columns=TOKENS))
+
+
+def test_eigenvalues_sorted_with_one_first():
+    eigenvalues = BasicTransitionMatrix(Counts(count(synthetic_rounds(seed=5)))).eigenvalues
+    moduli = np.abs(eigenvalues)
+
+    assert np.iscomplexobj(eigenvalues)
+    np.testing.assert_allclose(eigenvalues[0], 1, rtol=0, atol=1e-12)
+    assert (np.diff(moduli) <= 0).all()
+    assert (moduli[1:] < 1).all()
+
+
+def test_stationary_is_fixed_point():
+    tm = BasicTransitionMatrix(Counts(count(synthetic_rounds(seed=5))))
+    pi = tm.stationary
+
+    np.testing.assert_allclose(tm.P @ pi, pi, rtol=0, atol=1e-12)
+    assert pi.sum() == pytest.approx(1)
+    assert (pi > 0).all()
+    assert not np.iscomplexobj(pi)
+
+
+def test_uniform_P_eigen():
+    tm = BasicTransitionMatrix(zero_counts())
+
+    np.testing.assert_allclose(tm.eigenvalues, [1, 0, 0], rtol=0, atol=1e-12)
+    np.testing.assert_allclose(tm.stationary, [1 / 3, 1 / 3, 1 / 3], rtol=0, atol=1e-12)
+
+
+def test_square_matrix_kinds():
+    assert isinstance(BasicTransitionMatrix(zero_counts()), SquareTransitionMatrix)
+    tm = OutcomeTransitionMatrix(zero_counts())
+    assert not hasattr(tm, "eigenvalues")
+    assert not hasattr(tm, "stationary")
