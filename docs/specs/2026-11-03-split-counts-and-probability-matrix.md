@@ -125,11 +125,12 @@ Doc delta to `docs/CONTRACTS.md` on the subtask named in brackets.
   - The 3 × 3 is made in the constructor from the 3 × 9 counts, not by a separate count or N file (user: "shouldn't it be done in the constructor?"). Column `m` of the move counts = N columns `mW + mL + mT`; this equals counting next move against previous move directly, because both need the same previous round. Doc delta.
   - alpha is added after collapsing: `P = (M + alpha) / column sums`, so an unseen previous move gives `[1/3, 1/3, 1/3]`. Doc delta.
 - **Acceptance criteria:**
-  - [ ] New test: `BasicTransitionMatrix(Counts(count(BASIC)), alpha=1)` has column `R` = `[0.25, 0.5, 0.25]` (one R→P: `(0+1, 1+1, 0+1) / 4`), column `P` = `[0.25, 0.25, 0.5]` (one P→S) and column `S` = `[0.5, 0.25, 0.25]` (one S→R). `python -m pytest tests/test_markov.py`
-  - [ ] New test: on synthetic rounds, `(P × column sums − alpha)` recovers move counts equal to a `pd.crosstab` of next move against previous move computed in the test from the same rows. Same command.
-  - [ ] New test: `P` is 3 × 3, columns sum to 1 (atol 1e-12), `rows == states == MOVES`. Same command.
-  - [ ] Full suite passes. `python -m pytest`
+  - [x] New test: `BasicTransitionMatrix(Counts(count(BASIC)), alpha=1)` has column `R` = `[0.25, 0.5, 0.25]` (one R→P: `(0+1, 1+1, 0+1) / 4`), column `P` = `[0.25, 0.25, 0.5]` (one P→S) and column `S` = `[0.5, 0.25, 0.25]` (one S→R). `python -m pytest tests/test_markov.py`
+  - [x] New test: on synthetic rounds, `(P × column sums − alpha)` recovers move counts equal to a `pd.crosstab` of next move against previous move computed in the test from the same rows. Same command.
+  - [x] New test: `P` is 3 × 3, columns sum to 1 (atol 1e-12), `rows == states == MOVES`. Same command.
+  - [x] Full suite passes. `python -m pytest`
 - **Doc deltas:**
+  - Decision (made in S2): the collapse reshapes N to 3 × 3 × 3 and sums the last axis, which relies on `TOKENS` being move-major (`RW, RL, RT, PW, ...`). `docs/CONTRACTS.md` "States" (token order is fixed).
   - `docs/CONTRACTS.md` "Transition matrix": `BasicTransitionMatrix`, the collapse rule and where alpha is added.
   - `GLOSSARY.md`: add "Move state": the player's previous move; the 3 × 3 is built by summing the 3 × 9 counts over the outcome.
   - `README.md` "Model": the 3 × 3 P comes from the same N file via `BasicTransitionMatrix(Counts.load(path))`.

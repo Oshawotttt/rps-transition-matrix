@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from rps_markov.count import MOVES, TOKENS, count, load_rounds
-from rps_markov.markov import Counts, OutcomeTransitionMatrix, TransitionMatrix
+from rps_markov.markov import BasicTransitionMatrix, Counts, OutcomeTransitionMatrix, TransitionMatrix
 from rps_markov.matrix import Matrix
 from test_count import BASIC, rounds, run_cli, synthetic_rounds, write_inputs
 
@@ -114,3 +114,36 @@ def test_P_cached():
     tm = outcome_matrix(synthetic_rounds())
 
     assert tm.P is tm.P
+
+
+def test_basic_matrix_hand_checked():
+    tm = BasicTransitionMatrix(Counts(count(rounds("a", BASIC))), alpha=1)
+
+    # one R -> P, one P -> S, one S -> R
+    np.testing.assert_allclose(tm.column("R"), [0.25, 0.5, 0.25])
+    np.testing.assert_allclose(tm.column("P"), [0.25, 0.25, 0.5])
+    np.testing.assert_allclose(tm.column("S"), [0.5, 0.25, 0.25])
+
+
+def test_basic_matrix_recovers_move_counts():
+    df = synthetic_rounds(seed=3)
+    alpha = 0.5
+    tm = BasicTransitionMatrix(Counts(count(df)), alpha=alpha)
+
+    ordered = df.sort_values(["player_id", "round"])
+    by_player = ordered.groupby("player_id")
+    has_prev = by_player["round"].shift(1) == ordered["round"] - 1
+    prev_move = by_player["move"].shift(1)
+    expected = pd.crosstab(pd.Categorical(ordered["move"][has_prev], categories=MOVES),
+                           pd.Categorical(prev_move[has_prev], categories=MOVES), dropna=False)
+    recovered = tm.P * (expected.to_numpy().sum(axis=0) + 3 * alpha) - alpha
+
+    np.testing.assert_allclose(recovered, expected.loc[MOVES, MOVES].to_numpy(), atol=1e-9)
+
+
+def test_basic_matrix_shape():
+    tm = BasicTransitionMatrix(Counts(count(synthetic_rounds())))
+
+    assert tm.P.shape == (3, 3)
+    np.testing.assert_allclose(tm.P.sum(axis=0), 1, rtol=0, atol=1e-12)
+    assert tm.rows == tm.states == MOVES

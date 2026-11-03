@@ -62,3 +62,19 @@ class OutcomeTransitionMatrix(TransitionMatrix):
     def values(self) -> np.ndarray:
         smoothed = self._counts + self.alpha
         return smoothed / smoothed.sum(axis=0)
+
+
+class BasicTransitionMatrix(TransitionMatrix):
+    """3 x 3: next move given the previous move; P = (M + alpha) / column sums."""
+
+    def __init__(self, counts: Counts, alpha: float = 1.0) -> None:
+        self.rows = MOVES
+        self.columns = MOVES
+        self.alpha = alpha
+        # column m of M = N's columns mW + mL + mT (sum out the previous outcome)
+        self._counts = counts.values.reshape(len(MOVES), len(MOVES), -1).sum(axis=2)
+
+    @cached_property
+    def values(self) -> np.ndarray:
+        smoothed = self._counts + self.alpha
+        return smoothed / smoothed.sum(axis=0)
