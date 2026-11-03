@@ -91,18 +91,23 @@ Doc delta to `docs/CONTRACTS.md` on the subtask named in brackets.
   - `Counts.values` is read-only, so a matrix's cache cannot go stale. alpha is fixed at construction. Doc delta.
   - CLI keeps `--csv`, `--out` and `N_<name>.csv` naming; no `--alpha`. Doc delta.
 - **Acceptance criteria:**
-  - [ ] History and counting tests move to `tests/test_count.py` and are rewritten for k = 1: `test_load_rounds_missing_column`; basic history (`BASIC` gives states `RW, PL, ST` for rounds 2–4); gap (round after a missing round has no state); players kept separate; `test_add_history_matches_prev_columns`; small counts; total = number of rows with a state; unknown outcome → `ValueError`; `test_pooled_counts_sum` (skipped without partition files). `python -m pytest tests/test_count.py`
-  - [ ] CLI test: two inputs give exactly `N_a.csv`, `N_b.csv` in `--out`; header `move,RW,RL,RT,PW,PL,PT,SW,SL,ST`; rows `R, P, S`. Same command.
-  - [ ] CLI test: `--k` is rejected (non-zero exit). Same command.
-  - [ ] New test: `Counts.load(CLI output).values` equals `count(load_rounds(input)).to_numpy()`; `outcome is True`. `python -m pytest tests/test_markov.py`
-  - [ ] New test: `Counts` raises `ValueError` on rows not `R, P, S`, on a missing state column, and on k = 3 labels (`RW-RW-RW`, ...). Same command.
-  - [ ] New test: writing to `Counts(...).values` raises `ValueError`. Same command.
-  - [ ] New test: `Matrix()` and `TransitionMatrix()` raise `TypeError`. Same command.
-  - [ ] New test: for an `OutcomeTransitionMatrix` tm, `isinstance(tm, Matrix)`, `tm.P is tm.values`, `tm.states == tm.columns == TOKENS`, `tm.rows == MOVES`, `tm @ x` equals `tm.predict(x)`, and `tm.to_frame()` has index `MOVES` and columns `TOKENS`. Same command.
-  - [ ] P tests rewritten for `OutcomeTransitionMatrix(Counts(count(df)))`: shape 3 × 9, entries in [0, 1], columns sum to 1 (atol 1e-12); unseen state column `[1/3, 1/3, 1/3]` and a hand-checked seen column; `column(s)` equals `P @ e_s` and `to_frame()[s]`; `predict` of a mixture; unknown label → `KeyError`. Same command.
-  - [ ] New test: `tm.P is tm.P`. Same command.
-  - [ ] Full suite passes. `python -m pytest`
+  - [x] History and counting tests move to `tests/test_count.py` and are rewritten for k = 1: `test_load_rounds_missing_column`; basic history (`BASIC` gives states `RW, PL, ST` for rounds 2–4); gap (round after a missing round has no state); players kept separate; `test_add_history_matches_prev_columns`; small counts; total = number of rows with a state; unknown outcome → `ValueError`; `test_pooled_counts_sum` (skipped without partition files). `python -m pytest tests/test_count.py`
+  - [x] CLI test: two inputs give exactly `N_a.csv`, `N_b.csv` in `--out`; header `move,RW,RL,RT,PW,PL,PT,SW,SL,ST`; rows `R, P, S`. Same command.
+  - [x] CLI test: `--k` is rejected (non-zero exit). Same command.
+  - [x] New test: `Counts.load(CLI output).values` equals `count(load_rounds(input)).to_numpy()`; `outcome is True`. `python -m pytest tests/test_markov.py`
+  - [x] New test: `Counts` raises `ValueError` on rows not `R, P, S`, on a missing state column, and on k = 3 labels (`RW-RW-RW`, ...). Same command.
+  - [x] New test: writing to `Counts(...).values` raises `ValueError`. Same command.
+  - [x] New test: `Matrix()` and `TransitionMatrix()` raise `TypeError`. Same command.
+  - [x] New test: for an `OutcomeTransitionMatrix` tm, `isinstance(tm, Matrix)`, `tm.P is tm.values`, `tm.states == tm.columns == TOKENS`, `tm.rows == MOVES`, `tm @ x` equals `tm.predict(x)`, and `tm.to_frame()` has index `MOVES` and columns `TOKENS`. Same command.
+  - [x] P tests rewritten for `OutcomeTransitionMatrix(Counts(count(df)))`: shape 3 × 9, entries in [0, 1], columns sum to 1 (atol 1e-12); unseen state column `[1/3, 1/3, 1/3]` and a hand-checked seen column; `column(s)` equals `P @ e_s` and `to_frame()[s]`; `predict` of a mixture; unknown label → `KeyError`. Same command.
+  - [x] New test: `tm.P is tm.P`. Same command.
+  - [x] Full suite passes. `python -m pytest`
 - **Doc deltas:**
+  - Decision (made in S1): `count` rejects a bad move or outcome on any row of its input, not only on rows that get a state, so a bad round 1 is still caught. `docs/CONTRACTS.md` "Transition matrix".
+  - Decision (made in S1): `Counts` requires rows exactly `R, P, S` and columns exactly `TOKENS`, in that order; it does not reorder. `docs/CONTRACTS.md` "Matrix files".
+  - Decision (made in S1): `Counts` copies the frame's values, so changing the frame later cannot change N. `docs/CONTRACTS.md` "Transition matrix".
+  - Decision (made in S1): the count CLI parser has `allow_abbrev=False`, so only the exact flags `--csv` and `--out` are accepted. `docs/CONTRACTS.md` "CLI".
+  - Decision (made in S1): `tests/test_markov.py` imports the round builders (`rounds`, `BASIC`, `synthetic_rounds`, `write_inputs`, `run_cli`) from `tests/test_count.py` instead of copying them. No doc: test layout only.
   - `docs/CONTRACTS.md` "States": k = 1 only; a token state is one of `TOKENS`. "Transition matrix": split into counting (`count.py`), counts (`Counts`: load, hold, read-only, any source) and matrices (`TransitionMatrix` base, `OutcomeTransitionMatrix`; computed on first use, cached, never persisted).
   - `docs/CONTRACTS.md` "Matrix files" and "CLI": only `N_<name>.csv` is written, by `python -m rps_markov.count`; 9 state columns (token kind); no k. P, the 9 × 9 and A are never written to disk.
   - `docs/ARCHITECTURE.md` data flow: `load_rounds → add_history → count → N_<name>.csv` (CLI `rps_markov.count`); `Counts.load → <matrix class> → P`. Modules table: add `count.py` and `matrix.py` (`Matrix` base), narrow `markov.py`. Replace "The CLI is run for k = 3 only; k stays a parameter" with "Everything is k = 1".
