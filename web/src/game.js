@@ -21,23 +21,33 @@ function check(ok, key) {
   if (!ok) throw new Error(`bad bot JSON: ${key}`);
 }
 
-function checkDecision(d, key, moves) {
-  check(d !== null && typeof d === "object", key);
-  check(moves.includes(d.move), `${key}.move`);
-  check(Array.isArray(d.scores) && d.scores.length === 3, `${key}.scores`);
-  check(Array.isArray(d.q) && d.q.length === 3, `${key}.q`);
-  check(isNumber(d.expected_score), `${key}.expected_score`);
+function isObject(v) {
+  return v !== null && typeof v === "object" && !Array.isArray(v);
+}
+
+function isNumbers(v, length) {
+  return Array.isArray(v) && v.length === length && v.every(isNumber);
+}
+
+function checkDecision(decision, key, moves) {
+  check(isObject(decision), key);
+  check(moves.includes(decision.move), `${key}.move`);
+  check(isNumbers(decision.scores, 3), `${key}.scores`);
+  check(isNumbers(decision.q, 3), `${key}.q`);
+  check(isNumber(decision.expected_score), `${key}.expected_score`);
 }
 
 // Returns data unchanged if it has the shape the game reads; otherwise throws an Error naming the first bad key.
 export function validateBot(data) {
+  check(isObject(data), "(root)");
   check(sameList(data.moves, MOVES), "moves");
   check(sameList(data.tokens, TOKENS), "tokens");
   const A = data.payoff?.A;
-  check(Array.isArray(A) && A.length === 3 && A.every((row) => Array.isArray(row) && row.length === 3
-    && row.every(isNumber)), "payoff.A");
+  // every entry is a bot score outcomeOf can read: +1, 0 or -1
+  check(Array.isArray(A) && A.length === 3 && A.every((row) => isNumbers(row, 3) && row.every((v) => v in OUTCOMES)),
+    "payoff.A");
   checkDecision(data.opening, "opening", data.moves);
-  check(data.decisions !== null && typeof data.decisions === "object", "decisions");
+  check(isObject(data.decisions), "decisions");
   for (const t of data.tokens) checkDecision(data.decisions[t], `decisions.${t}`, data.moves);
   return data;
 }
@@ -86,7 +96,7 @@ export function playRound(game, humanMove, botMove) {
   const expectedScore = decision.scores[moveIndex(bot, botMove)];
   const expectedTotal = game.expectedTotal + expectedScore;
   const actualTotal = game.actualTotal + botScore;
-  const round = Object.freeze({
+  const record = Object.freeze({
     round: game.round, decision, botMove, recommendedMove: decision.move, recommended: botMove === decision.move,
     humanMove, botScore, outcome, token, expectedScore, recommendedExpectedScore: decision.expected_score,
     expectedTotal, actualTotal,
@@ -97,6 +107,6 @@ export function playRound(game, humanMove, botMove) {
   else if (tally.lose === game.target) winner = "bot";
   return freezeGame({
     ...game, round: game.round + 1, state: token, decision: bot.decisions[token],
-    history: [...game.history, round], tally, winner, expectedTotal, actualTotal,
+    history: [...game.history, record], tally, winner, expectedTotal, actualTotal,
   });
 }

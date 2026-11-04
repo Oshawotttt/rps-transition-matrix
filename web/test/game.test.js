@@ -196,9 +196,11 @@ test("validateBot rejects bad shapes", () => {
     ["payoff.A", (b) => { b.payoff.A = b.payoff.A.slice(0, 2); }],
     ["payoff.A", (b) => { b.payoff.A[1] = [1, 0]; }],
     ["payoff.A", (b) => { b.payoff.A[2][0] = "-1"; }],
+    ["payoff.A", (b) => { b.payoff.A[0][0] = 0.5; }],
     ["opening", (b) => { delete b.opening; }],
     ["opening.move", (b) => { b.opening.move = "X"; }],
     ["opening.scores", (b) => { b.opening.scores = [0, 0]; }],
+    ["opening.scores", (b) => { b.opening.scores = ["a", "b", "c"]; }],
     ["opening.q", (b) => { delete b.opening.q; }],
     ["opening.expected_score", (b) => { b.opening.expected_score = "0.2"; }],
     ["decisions", (b) => { delete b.decisions; }],
@@ -206,12 +208,16 @@ test("validateBot rejects bad shapes", () => {
     ["decisions.PL.move", (b) => { delete b.decisions.PL.move; }],
     ["decisions.RW.scores", (b) => { b.decisions.RW.scores = [0, 0, 0, 0]; }],
     ["decisions.SW.q", (b) => { b.decisions.SW.q = [1]; }],
+    ["decisions.SW.q", (b) => { b.decisions.SW.q = [0.2, null, 0.5]; }],
     ["decisions.RT.expected_score", (b) => { b.decisions.RT.expected_score = null; }],
   ];
   for (const [key, breakIt] of cases) {
     const bot = handBot();
     breakIt(bot);
-    assert.throws(() => validateBot(bot), (err) => err instanceof Error && err.message.includes(key), key);
+    assert.throws(() => validateBot(bot), { name: "Error", message: `bad bot JSON: ${key}` }, key);
+  }
+  for (const data of [null, [], "bot"]) {
+    assert.throws(() => validateBot(data), { name: "Error", message: "bad bot JSON: (root)" }, String(data));
   }
 });
 
