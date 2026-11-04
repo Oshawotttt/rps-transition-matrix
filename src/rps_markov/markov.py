@@ -35,6 +35,10 @@ def _smoothed(counts: np.ndarray, alpha: float) -> np.ndarray:
     return shifted / shifted.sum(axis=0)
 
 
+# how close an eigenvalue or modulus must be to 1 to count as 1
+EIGEN_TOL = 1e-9
+
+
 class TransitionMatrix(Matrix):
     """Column-stochastic P: rows = next move, columns = states."""
 
@@ -96,13 +100,13 @@ class SquareTransitionMatrix(TransitionMatrix):
     @cached_property
     def eigenvalue_one_multiplicity(self) -> int:
         """How many eigenvalues are within 1e-9 of 1."""
-        return int(np.sum(np.abs(self.eigenvalues - 1) < 1e-9))
+        return int(np.sum(np.abs(self.eigenvalues - 1) < EIGEN_TOL))
 
     @cached_property
     def has_unit_cycle(self) -> bool:
         """Some eigenvalue has modulus 1 but is not 1 (within 1e-9), so the chain cycles and never settles."""
-        on_circle = np.abs(self.moduli - 1) < 1e-9
-        return bool(np.any(on_circle & (np.abs(self.eigenvalues - 1) >= 1e-9)))
+        on_circle = np.abs(self.moduli - 1) < EIGEN_TOL
+        return bool(np.any(on_circle & (np.abs(self.eigenvalues - 1) >= EIGEN_TOL)))
 
     @cached_property
     def stationary(self) -> np.ndarray:
@@ -110,9 +114,7 @@ class SquareTransitionMatrix(TransitionMatrix):
         if self.eigenvalue_one_multiplicity > 1:
             raise ValueError(f"eigenvalue 1 has multiplicity {self.eigenvalue_one_multiplicity}, "
                              "so the steady state is not unique")
-        eigenvalues, eigenvectors = self._eig
-        pi = np.real(eigenvectors[:, np.argmin(np.abs(eigenvalues - 1))])
-        return pi / pi.sum()
+        return _eigenvalue_one_vector(*self._eig)
 
     def look_ahead(self, x: np.ndarray, tol: float = 0.01, max_steps: int = 100) -> np.ndarray:
         """Rows x, P x, P^2 x, ...; stops at the first row whose summed absolute change from the last is below tol, or at max_steps."""
@@ -126,7 +128,7 @@ class SquareTransitionMatrix(TransitionMatrix):
     def rounds_to_fade(self, fraction: float = 0.1) -> int | None:
         """Smallest t with |lambda_2|^t < fraction; 0 when lambda_2 = 0; None when |lambda_2| is 1 (within 1e-9)."""
         modulus = self.moduli[1]
-        if modulus >= 1 - 1e-9:
+        if modulus >= 1 - EIGEN_TOL:
             return None
         if modulus == 0:
             return 0
@@ -165,7 +167,7 @@ class SquareTransitionMatrix(TransitionMatrix):
         out = []
         for group in self._closed_indices:
             pi = np.zeros(len(self.states))
-            pi[group] = _eigenvalue_one_vector(self.P[np.ix_(group, group)])
+            pi[group] = _eigenvalue_one_vector(*np.linalg.eig(self.P[np.ix_(group, group)]))
             out.append(pi)
         return out
 
@@ -176,9 +178,8 @@ class SquareTransitionMatrix(TransitionMatrix):
         return [s for j, s in enumerate(self.states) if j not in closed]
 
 
-def _eigenvalue_one_vector(P: np.ndarray) -> np.ndarray:
-    """The real eigenvector of P for the eigenvalue nearest 1, scaled to sum to 1."""
-    eigenvalues, eigenvectors = np.linalg.eig(P)
+def _eigenvalue_one_vector(eigenvalues: np.ndarray, eigenvectors: np.ndarray) -> np.ndarray:
+    """The real eigenvector for the eigenvalue nearest 1, scaled to sum to 1."""
     pi = np.real(eigenvectors[:, np.argmin(np.abs(eigenvalues - 1))])
     return pi / pi.sum()
 

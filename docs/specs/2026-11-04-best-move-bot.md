@@ -224,6 +224,7 @@ Every matrix is a list of rows. Every eigenvalue list is a list of `[re, im]` pa
     - `stationary` keeps its existing eigenvector computation and now raises through `eigenvalue_one_multiplicity`, so both use the same 1e-9 test. Needs no doc beyond the shared tolerance.
     - `outcome_rates` and `group_outcome_rates` share one private helper, so the two rates are summed the same way. Needs no doc.
     - `tests/test_markov.py::test_diagnostics_reducible` also checks `transient_states == ["RL", "PT", "SW"]`. Needs no doc.
+    - The 1e-9 eigenvalue tolerance is one module constant, `EIGEN_TOL` in `src/rps_markov/markov.py`, used by `eigenvalue_one_multiplicity`, `has_unit_cycle` and `rounds_to_fade` (code review). `docs/CONTRACTS.md` tolerances.
     - Spec change: the uniform look-ahead criterion was 2 rows, which contradicted the stop rule in **Interfaces**; the user chose the Interfaces rule, so it is now 3 rows. `docs/CONTRACTS.md` `look_ahead` entry (row 0 is x; the converged row is included).
 
 ### S4: JSON export for the browser frontend
