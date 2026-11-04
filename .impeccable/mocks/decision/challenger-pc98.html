@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Sixteen-Colour</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#0000aa;--cyan:#55ffff;--mag:#ff55ff;--white:#fff;--red:#aa0000;--black:#000}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--black);color:var(--white);font-family:'DotGothic16',monospace;font-variant-numeric:tabular-nums;position:relative;image-rendering:pixelated}
+.sky{position:absolute;inset:0 0 300px 0;background:
+  repeating-conic-gradient(var(--blue) 0 25%,var(--mag) 0 50%) 0 0/4px 4px}
+.sky::after{content:"";position:absolute;inset:0;background:linear-gradient(var(--blue) 0 40%,transparent 40%)}
+.portrait{position:absolute;right:60px;top:40px;width:420px;height:560px;border:6px solid var(--white);outline:6px solid var(--black);background:var(--cyan);display:grid;place-items:center;font-size:150px;color:var(--black)}
+.tag{position:absolute;right:60px;top:610px;width:420px;text-align:center;background:var(--black);border:4px solid var(--white);font-size:34px;padding:6px}
+.human{position:absolute;left:60px;top:60px;width:240px;height:240px;border:6px solid var(--white);background:var(--mag);display:grid;place-items:center;font-size:90px;color:var(--black)}
+.htag{position:absolute;left:60px;top:310px;width:240px;text-align:center;font-size:32px;background:var(--black);border:4px solid var(--white);padding:4px}
+.score{position:absolute;left:360px;top:90px;font-size:96px;text-shadow:6px 6px 0 var(--black)}
+.score small{display:block;font-size:34px}
+.win{position:absolute;left:40px;right:40px;bottom:30px;height:250px;background:var(--black);border:6px solid var(--white);box-shadow:inset 0 0 0 6px var(--blue),inset 0 0 0 10px var(--white);padding:26px 40px}
+.win h1{font-size:36px;color:var(--cyan);margin-bottom:14px}
+.row{font-size:40px;line-height:1.35;padding:0 16px}
+.row.on{background:var(--white);color:var(--black)}
+.row span{opacity:1;margin-left:24px}
+</style></head><body>
+<div class="sky"></div>
+<div class="human">ᵔᴗᵔ</div><div class="htag">YOU ✓ chosen</div>
+<div class="score">0 - 0<small>BEST OF 3 · ROUND 1</small></div>
+<div class="portrait">◕‿◕</div><div class="tag">BOT ✓ chosen</div>
+<div class="win">
+  <h1>BOT is thinking... x = π</h1>
+  <div class="row on">▶ 1 PREDICT<span>q = P x</span></div>
+  <div class="row">&nbsp; 2 SCORE<span>A q</span></div>
+  <div class="row">&nbsp; 3 CHOOSE<span>largest entry of A q</span></div>
+</div>
+</body></html>

@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Across the Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Gabarito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#fbfbf8;--ink:#20232b;--ink2:#4a4f5c;--wall:#f1efe8;--table:#c9d8c5;--rim:#7f9a7b;--r:#c24b3a;--p:#3462ad;--s:#d39b22;--w:#2f7b55;--t:#d8d5cc;--l:#c24b3a;--hi:#fff3c9;
+  --robot:#e6ebf1;--robot2:#a9b6c6;--screen:#20232b;--glow:#a6f0c6;--bulb:#d39b22;--blush:#f4b0a6;--tie:#3462ad;
+  --jacket:#b4483a;--jacket2:#963a2f;--shirt:#fbfbf8;--tie2:#20232b;--skin:#f3cfae;--skin2:#e3b893;--hair:#2e2420;--face:#20232b;
+  --ease:cubic-bezier(.16,1,.3,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:90px}
+body{background:var(--paper);font-family:'Atkinson Hyperlegible',system-ui,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums;font-size:22px}
+::selection{background:var(--p);color:#fff}
+:focus-visible{outline:3px solid var(--p);outline-offset:3px}
+::-webkit-scrollbar{width:14px}::-webkit-scrollbar-track{background:var(--wall)}::-webkit-scrollbar-thumb{background:var(--rim);border-radius:7px;border:3px solid var(--wall)}
+button{font:inherit;color:inherit}
+.wrap{max-width:1320px;margin:0 auto;padding:0 56px}
+
+.vec,.mat{display:inline-grid;position:relative;padding:4px 14px;gap:2px 18px;text-align:right;vertical-align:middle}
+.vec::before,.vec::after,.mat::before,.mat::after{content:"";position:absolute;top:0;bottom:0;width:9px;border:2.5px solid currentColor}
+.vec::before,.mat::before{left:0;border-right:0}.vec::after,.mat::after{right:0;border-left:0}
+.mat span.hl,.vec span.hl{background:var(--hi);border-radius:4px;font-weight:700;margin:0 -6px;padding:0 6px}
+.mat{grid-template-columns:repeat(3,auto)}
+.mat span.z{color:#a19e96}
+.ic{width:1em;height:1em;vertical-align:-.14em;fill:currentColor}
+.mR{color:var(--r)}.mP{color:var(--p)}.mS{color:var(--s)}
+
+.rb-head,.rb-body{fill:var(--robot)}.rb-ear,.rb-neck,.rb-dot{fill:var(--robot2)}.rb-screen{fill:var(--screen)}
+.rb-eye{fill:var(--glow)}.rb-shine{fill:#fff}.rb-mouth{fill:none;stroke:var(--glow);stroke-width:4;stroke-linecap:round}
+.rb-ant{stroke:var(--robot2);stroke-width:5;stroke-linecap:round}.rb-bulb{fill:var(--bulb)}.rb-cheek{fill:var(--blush);opacity:.85}.rb-tie{fill:var(--tie)}
+.hu-jacket{fill:var(--jacket)}.hu-lapel{fill:var(--jacket2)}.hu-shirt{fill:var(--shirt)}.hu-tie{fill:var(--tie2)}
+.hu-skin{fill:var(--skin)}.hu-neck{fill:var(--skin2)}.hu-hair{fill:var(--hair)}.hu-eye{fill:var(--face)}
+.hu-smile{fill:none;stroke:var(--face);stroke-width:3.5;stroke-linecap:round}.hu-cheek{fill:var(--blush);opacity:.6}
+
+/* scene */
+.scene{position:relative;height:380px;background:var(--wall);overflow:hidden}
+.scene .in{position:relative;height:100%;max-width:1440px;margin:0 auto}
+.tag{position:absolute;top:34px;font:800 34px/1 'Gabarito'}
+.tag small{display:block;font:400 20px 'Atkinson Hyperlegible';margin-top:8px}
+.tag .lock{display:inline-flex;align-items:center;gap:8px;margin-top:12px;font:700 18px 'Atkinson Hyperlegible';background:var(--paper);border-radius:999px;padding:6px 14px}
+.tag .lock i{width:10px;height:10px;border-radius:50%;background:var(--w)}
+.tag.bot{left:64px}.tag.hum{right:64px;text-align:right}
+.bust{position:absolute;bottom:94px;width:270px;height:270px}
+.bust svg{width:100%;height:100%;display:block}
+.bust.bot{left:220px}.bust.hum{right:220px}
+.mid{position:absolute;left:50%;top:26px;transform:translateX(-50%);text-align:center;width:440px}
+.score{font:800 88px/1 'Gabarito';letter-spacing:-.03em;display:flex;justify-content:center;align-items:baseline;gap:18px}
+.score small{font:700 20px 'Atkinson Hyperlegible';letter-spacing:0;display:block;margin-top:4px}
+.score .dash{font-weight:500}
+.mid p{font-size:21px;margin-top:6px}
+.tbl{position:absolute;left:0;right:0;bottom:0;height:110px;background:var(--table);border-top:10px solid var(--rim)}
+.prev{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);display:flex;align-items:flex-end;gap:22px}
+.crd{width:104px;height:132px;background:var(--paper);border-radius:12px;box-shadow:0 10px 18px -8px rgba(32,35,43,.45);display:grid;place-items:center;align-content:center;gap:6px;font:700 19px 'Atkinson Hyperlegible'}
+.crd svg.ic{width:54px;height:54px}
+.crd.empty{background:transparent;box-shadow:inset 0 0 0 2.5px rgba(32,35,43,.35);color:var(--ink2);font-weight:400;font-size:16px}
+.crd.b{transform:rotate(-5deg)}.crd.h{transform:rotate(5deg)}
+.crd.won{box-shadow:0 10px 18px -8px rgba(32,35,43,.45),0 0 0 4px var(--w)}
+.pcap{text-align:center;font:700 19px 'Atkinson Hyperlegible';background:var(--ink);color:var(--paper);border-radius:999px;padding:8px 18px;white-space:nowrap;align-self:center;margin-bottom:38px}
+
+/* tabs */
+.bar{position:sticky;top:0;z-index:5;background:var(--paper);box-shadow:0 1px 0 var(--t),0 10px 20px -18px rgba(32,35,43,.5)}
+.bar .wrap{display:flex;align-items:center;gap:6px;height:80px}
+.tab{height:52px;padding:0 20px;border:0;border-radius:12px;background:transparent;font:700 21px 'Atkinson Hyperlegible';cursor:pointer}
+.tab:hover{background:var(--wall)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.mini{margin-left:auto;font:700 20px 'Atkinson Hyperlegible';display:flex;align-items:center;gap:16px}
+.mini b{font:800 28px 'Gabarito'}
+.len{display:flex;gap:4px;padding:4px;border-radius:12px;box-shadow:inset 0 0 0 2px var(--t)}
+.len button{height:38px;padding:0 12px;border:0;border-radius:9px;background:transparent;font:700 16px 'Atkinson Hyperlegible';cursor:pointer}
+.len button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.len button:disabled{cursor:not-allowed}
+.len button:disabled:not([aria-pressed="true"]){color:#a7a59e}
+
+/* report */
+.panel{padding:44px 0 120px}
+.panel[hidden]{display:none}
+.lede{display:flex;align-items:baseline;gap:24px;margin-bottom:10px}
+.lede h1{font:800 48px/1.05 'Gabarito';letter-spacing:-.02em}
+.lede p{font-size:24px}
+.lede p b{font-weight:700}
+.intro{font-size:22px;line-height:1.5;max-width:68ch;color:var(--ink2);margin-bottom:28px}
+details.step{border-top:2px solid var(--ink)}
+details.step:last-of-type{border-bottom:2px solid var(--ink)}
+details.step>summary{list-style:none;display:flex;align-items:center;gap:20px;padding:22px 0;cursor:pointer}
+details.step>summary::-webkit-details-marker{display:none}
+.n{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font:800 26px 'Gabarito';background:var(--ink);color:var(--paper);flex:none}
+summary h2{font:800 36px 'Gabarito';letter-spacing:-.01em}
+summary h2 em{font:400 28px 'Atkinson Hyperlegible';font-style:normal;margin-left:14px}
+summary .chev{margin-left:auto;width:26px;height:26px;transition:transform .3s var(--ease)}
+details[open] .chev{transform:rotate(180deg)}
+.sbody{padding:0 0 40px 72px;display:grid;gap:26px}
+.sbody p{max-width:68ch;line-height:1.5}
+.eq{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:24px}
+.eq .lab{font-weight:700}
+.collbl{display:grid;grid-template-columns:repeat(9,auto);gap:0 18px;font:700 16px 'Atkinson Hyperlegible';color:var(--ink2);padding:0 14px;text-align:right}
+.collbl span.hl{color:var(--ink);background:var(--hi);border-radius:4px;margin:0 -6px;padding:0 6px}
+.mstack{display:inline-flex;flex-direction:column;gap:6px;vertical-align:middle}
+.figs{display:grid;grid-template-columns:minmax(0,560px) 1fr;gap:56px;align-items:end}
+.vb{display:flex;align-items:flex-end;gap:22px;height:180px;border-bottom:2px solid var(--ink)}
+.vb div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font:700 21px 'Atkinson Hyperlegible'}
+.vb i{display:block;width:100%;border-radius:8px 8px 0 0;margin-top:6px}
+.vl{display:flex;gap:22px;margin-top:8px;font:700 20px 'Atkinson Hyperlegible'}
+.vl span{flex:1;text-align:center}
+.cap{font-size:19px;color:var(--ink2);margin-top:10px}
+.stk{display:grid;gap:12px;max-width:820px}
+.st{display:grid;grid-template-columns:200px 1fr 96px;align-items:center;gap:16px;font:700 21px 'Atkinson Hyperlegible'}
+.st .sb{display:flex;height:34px;border-radius:6px;overflow:hidden}
+.st .sb i{display:block;height:100%;display:grid;place-items:center;font:700 16px 'Atkinson Hyperlegible';color:#fff}
+.st .sb i.t{color:var(--ink)}
+.st span:last-child{text-align:right}
+.key{display:flex;gap:22px;font-size:18px;color:var(--ink2)}
+.key i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.opts{display:flex;gap:18px;flex-wrap:wrap}
+.mv{display:flex;align-items:center;gap:14px;height:84px;padding:0 30px 0 22px;border:0;border-radius:16px;background:var(--wall);font:800 30px 'Gabarito';cursor:pointer;box-shadow:inset 0 0 0 2px var(--t);transition:background .15s,box-shadow .15s,transform .15s var(--ease)}
+.mv svg.ic{width:46px;height:46px}
+.mv:hover{background:#fff;box-shadow:inset 0 0 0 2px var(--ink);transform:translateY(-2px)}
+.mv:disabled{cursor:default;transform:none}
+.mv.no{animation:shake .4s var(--ease);box-shadow:inset 0 0 0 3px var(--l)}
+.mv.yes{background:var(--ink);color:var(--paper);box-shadow:none}
+@keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(4px)}}
+@media (prefers-reduced-motion:reduce){.mv.no{animation:none}html{scroll-behavior:auto}}
+.fb{font:700 22px 'Atkinson Hyperlegible';min-height:1.5em}
+.fb.bad{color:var(--l)}
+.result{display:none;align-items:center;gap:28px;background:var(--wall);border-radius:16px;padding:24px 28px}
+.result.on{display:flex}
+.result .pair{display:flex;gap:14px}
+.result .crd{width:92px;height:116px}
+.result .crd svg.ic{width:46px;height:46px}
+.result h3{font:800 36px/1.1 'Gabarito'}
+.result p{font-size:20px;margin-top:6px}
+.next{margin-left:auto;height:60px;padding:0 26px;border:0;border-radius:14px;background:var(--ink);color:var(--paper);font:700 22px 'Atkinson Hyperlegible';cursor:pointer}
+.flag{font:700 20px 'Atkinson Hyperlegible';color:var(--l)}
+.mock{font-size:17px;color:var(--ink2);margin-top:36px}
+
+/* other panels */
+.sec{margin-top:40px}
+.sec h2{font:800 32px 'Gabarito';margin-bottom:16px}
+.eig{display:grid;grid-template-columns:repeat(9,1fr);gap:10px;max-width:1100px}
+.eig div{border-radius:12px;background:var(--wall);padding:14px 10px;text-align:center}
+.eig div b{display:block;font:800 24px 'Gabarito'}
+.eig div span{font-size:16px;color:var(--ink2)}
+.eig div.one{background:var(--ink);color:var(--paper)}.eig div.one span{color:#c9ccd4}
+.eig div.two{background:var(--hi)}
+.pi{display:flex;align-items:flex-end;gap:14px;height:220px;border-bottom:2px solid var(--ink);max-width:1100px}
+.pi div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font:700 19px 'Atkinson Hyperlegible'}
+.pi i{display:block;width:100%;border-radius:7px 7px 0 0;margin-top:6px}
+.pil{display:flex;gap:14px;max-width:1100px;margin-top:8px;font:700 19px 'Atkinson Hyperlegible'}
+.pil span{flex:1;text-align:center}
+.rates{display:flex;gap:40px;margin-top:22px;font-size:22px}
+.rates b{font:800 34px 'Gabarito';display:block}
+.grid9{border-collapse:collapse;font-size:18px}
+.grid9 td,.grid9 th{padding:6px 10px;text-align:right}
+.grid9 th{font-weight:700;color:var(--ink2)}
+.grid9 td.z{color:#c4c1b8}
+.grid9 td.best{background:var(--hi);font-weight:700;border-radius:4px}
+.tally{display:flex;gap:28px;flex-wrap:wrap}
+.tally figure{width:170px}
+.tally .vb{height:110px;gap:10px}
+.tally .vb div{font-size:15px}
+.tally figcaption{font:700 18px 'Atkinson Hyperlegible';margin-top:8px;text-align:center}
+.warn{display:flex;gap:20px;align-items:flex-start;background:var(--hi);border-radius:14px;padding:22px 26px;margin:0 0 28px;max-width:1100px}
+.warn svg{width:40px;height:40px;flex:none;margin-top:2px}
+.warn h3{font:800 28px/1.2 'Gabarito'}
+.warn p{font-size:21px;line-height:1.45;margin-top:6px;max-width:68ch}
+.warn .fb2{display:inline-block;margin-top:12px;font:700 19px 'Atkinson Hyperlegible';background:var(--paper);border-radius:999px;padding:6px 14px}
+.eig div.cyc{background:var(--hi);box-shadow:inset 0 0 0 2px var(--ink)}
+.grps{display:flex;gap:24px;flex-wrap:wrap}
+.grp{background:var(--wall);border-radius:14px;padding:18px 22px;min-width:300px}
+.grp h3{font:800 24px 'Gabarito'}
+.grp p{font-size:19px;margin-top:8px}
+.grp .rates{gap:26px;margin-top:12px;font-size:18px}.grp .rates b{font-size:26px}
+.empty-note{font-size:22px;color:var(--ink2)}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="robot" viewBox="0 0 200 200">
+    <line class="rb-ant" x1="100" y1="42" x2="100" y2="22"/><circle class="rb-bulb" cx="100" cy="16" r="8"/>
+    <rect class="rb-ear" x="24" y="72" width="16" height="38" rx="7"/><rect class="rb-ear" x="160" y="72" width="16" height="38" rx="7"/>
+    <rect class="rb-neck" x="86" y="136" width="28" height="16" rx="4"/>
+    <path class="rb-body" d="M46 204V176c0-17 12-28 30-28h48c18 0 30 11 30 28v28z"/>
+    <rect class="rb-head" x="36" y="38" width="128" height="102" rx="32"/><rect class="rb-screen" x="52" y="56" width="96" height="64" rx="22"/>
+    <ellipse class="rb-eye" cx="79" cy="85" rx="8.5" ry="11"/><ellipse class="rb-eye" cx="121" cy="85" rx="8.5" ry="11"/>
+    <circle class="rb-shine" cx="82" cy="80" r="2.6"/><circle class="rb-shine" cx="124" cy="80" r="2.6"/>
+    <path class="rb-mouth" d="M91 104q9 7 18 0"/><circle class="rb-cheek" cx="64" cy="104" r="5"/><circle class="rb-cheek" cx="136" cy="104" r="5"/>
+    <path class="rb-tie" d="M100 162 80 151v22zM100 162l20-11v22z"/><circle class="rb-tie" cx="100" cy="162" r="5.5"/>
+    <circle class="rb-dot" cx="86" cy="188" r="3.5"/><circle class="rb-dot" cx="100" cy="188" r="3.5"/><circle class="rb-dot" cx="114" cy="188" r="3.5"/>
+  </symbol>
+  <symbol id="human" viewBox="0 0 200 200">
+    <rect class="hu-neck" x="89" y="122" width="22" height="28" rx="6"/>
+    <path class="hu-jacket" d="M40 204v-24c0-22 16-34 40-36h40c24 2 40 14 40 36v24z"/>
+    <path class="hu-shirt" d="M82 144h36l-18 38z"/><path class="hu-tie" d="M100 150l-6 7 6 24 6-24z"/>
+    <path class="hu-lapel" d="M82 144l18 38-11 6-15-38zM118 144l-18 38 11 6 15-38z"/>
+    <circle class="hu-skin" cx="57" cy="94" r="9"/><circle class="hu-skin" cx="143" cy="94" r="9"/><circle class="hu-skin" cx="100" cy="88" r="44"/>
+    <path class="hu-hair" d="M55 92c-4-34 18-56 46-56 29 0 50 20 46 54-5-11-9-19-16-25-16 11-42 15-64 9-6 5-10 11-12 18z"/>
+    <ellipse class="hu-eye" cx="84" cy="96" rx="4.6" ry="6"/><ellipse class="hu-eye" cx="116" cy="96" rx="4.6" ry="6"/>
+    <circle class="hu-cheek" cx="72" cy="110" r="6"/><circle class="hu-cheek" cx="128" cy="110" r="6"/><path class="hu-smile" d="M92 112q8 7 16 0"/>
+  </symbol>
+  <symbol id="mR" viewBox="0 0 48 48"><path d="M8 31c-2-10 6-19 17-19s18 8 16 18c-1 8-9 11-16 11-9 0-16-3-17-10z"/></symbol>
+  <symbol id="mP" viewBox="0 0 48 48"><path d="M11 5h20l9 9v29H11z"/><path d="M31 5v9h9" fill="#fff" opacity=".45"/></symbol>
+  <symbol id="mS" viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"><circle cx="14" cy="35" r="6.5"/><circle cx="34" cy="35" r="6.5"/><path d="M18 30 35 6M30 30 13 6"/></g></symbol>
+  <symbol id="warn" viewBox="0 0 40 40"><path d="M20 4 37 34H3z" fill="#20232b" stroke="#20232b" stroke-width="3" stroke-linejoin="round"/><path d="M20 14v10" stroke="#fff3c9" stroke-width="3.5" stroke-linecap="round"/><circle cx="20" cy="29" r="2.2" fill="#fff3c9"/></symbol>
+  <symbol id="chev" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</defs></svg>
+
+<header class="scene"><div class="in">
+  <div class="tag bot">The Bot<small>That's us</small></div>
+  <div class="tag hum">Your friend<small>Playing from the corner</small><span class="lock"><i></i>Move locked in</span></div>
+  <div class="mid">
+    <div class="score"><span><span id="sBot">0</span><small>Bot</small></span><span class="dash">–</span><span><span id="sHum">0</span><small>Friend</small></span></div>
+    <p id="roundLab"></p>
+  </div>
+  <div class="bust bot"><svg><use href="#robot"/></svg></div>
+  <div class="bust hum"><svg><use href="#human"/></svg></div>
+  <div class="tbl"></div>
+  <div class="prev" id="prev"></div>
+</div></header>
+
+<nav class="bar"><div class="wrap" role="tablist" aria-label="Panels">
+  <button class="tab" role="tab" data-p="round" aria-selected="true">This round</button>
+  <button class="tab" role="tab" data-p="long" aria-selected="false">Long run</button>
+  <button class="tab" role="tab" data-p="tally" aria-selected="false">Tally</button>
+  <button class="tab" role="tab" data-p="policy" aria-selected="false">Policy</button>
+  <button class="tab" role="tab" data-p="ahead" aria-selected="false">Look ahead</button>
+  <div class="mini"><span>Bot <b id="mBot">0</b> – <b id="mHum">0</b> Friend</span>
+    <div class="len" role="group" aria-label="Match length"><button data-n="3" aria-pressed="true">Best of 3</button><button data-n="5" aria-pressed="false">Best of 5</button></div></div>
+</div></nav>
+
+<main class="wrap">
+  <section class="panel" id="p-round" role="tabpanel">
+    <div class="lede"><h1 id="rTitle"></h1><p id="xLab"></p></div>
+    <p class="intro" id="rIntro"></p>
+    <div id="warnR"></div>
+
+    <details class="step" open id="s1">
+      <summary><span class="n">1</span><h2>Predict<em>q = P x</em></h2><svg class="chev"><use href="#chev"/></svg></summary>
+      <div class="sbody">
+        <p id="s1text"></p>
+        <div class="eq" id="s1eq"></div>
+        <div class="figs"><div><div class="vb" id="qBars"></div><div class="vl"><span>Rock</span><span>Paper</span><span>Scissors</span></div><p class="cap">Their chance of throwing each move next.</p></div></div>
+      </div>
+    </details>
+
+    <details class="step" open id="s2">
+      <summary><span class="n">2</span><h2>Score<em>A q</em></h2><svg class="chev"><use href="#chev"/></svg></summary>
+      <div class="sbody">
+        <p>A holds our score for each pair of moves: rows are our move, columns are theirs. Multiplying by q gives each of our moves' expected points: its chance of winning minus its chance of losing.</p>
+        <div class="eq" id="s2eq"></div>
+        <div class="stk" id="stk"></div>
+        <div class="key"><span><i style="background:var(--w)"></i>We win</span><span><i style="background:var(--t)"></i>Tie</span><span><i style="background:var(--l)"></i>We lose</span></div>
+      </div>
+    </details>
+
+    <details class="step" open id="s3">
+      <summary><span class="n">3</span><h2>Choose<em>the largest entry of A q</em></h2><svg class="chev"><use href="#chev"/></svg></summary>
+      <div class="sbody">
+        <p>Which move do we play? Pick the row of A q with the largest score. If two tie, take the first in the order R, P, S.</p>
+        <div class="opts" id="opts">
+          <button class="mv" data-m="R"><svg class="ic mR"><use href="#mR"/></svg>Rock</button>
+          <button class="mv" data-m="P"><svg class="ic mP"><use href="#mP"/></svg>Paper</button>
+          <button class="mv" data-m="S"><svg class="ic mS"><use href="#mS"/></svg>Scissors</button>
+        </div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+        <p class="flag" id="flag"></p>
+        <div class="result" id="result" aria-live="polite"></div>
+      </div>
+    </details>
+    <p class="mock">Mock: your friend's move is picked at random here. The app gets it from their device.</p>
+  </section>
+
+  <section class="panel" id="p-long" role="tabpanel" hidden>
+    <div class="lede"><h1>The long run</h1><p>The 9 × 9 matrix M for your friend against this bot</p></div>
+    <p class="intro">Round 1 has no previous state, so we start from the steady state π of M. These numbers are fixed before the match.</p>
+    <div id="warnL"></div>
+    <div class="sec"><h2>Eigenvalues of M, sorted by |λ|</h2><p class="cap" style="margin-bottom:14px">Solved numerically from det(M − λI) = 0. λ₂ sets how fast the start stops mattering: about <b id="fade"></b> rounds to fall below 10%.</p><div class="eig" id="eig"></div></div>
+    <div class="sec" id="grpSec" hidden><h2>Closed groups</h2><div class="grps" id="grps"></div><p class="cap" style="margin-top:12px">Synthetic example for this draft.</p></div>
+    <div class="sec" id="piSec"><h2>Steady state π</h2><div class="pi" id="pi"></div><div class="pil" id="pil"></div>
+      <div class="rates" id="rates"></div><p class="cap" id="trans" style="margin-top:14px"></p></div>
+    <div class="sec"><h2>M, 3 nonzero entries per column</h2><table class="grid9" id="m9"></table></div>
+  </section>
+
+  <section class="panel" id="p-tally" role="tabpanel" hidden>
+    <div class="lede"><h1>Tally</h1><p>What we predicted against what they threw</p></div>
+    <p class="intro">One chart per round: our q for that round. Their actual move is green, the other two are red.</p>
+    <div class="tally" id="tally"></div>
+  </section>
+
+  <section class="panel" id="p-policy" role="tabpanel" hidden>
+    <div class="lede"><h1>Our policy</h1><p>S = A P scores every state at once</p></div>
+    <p class="intro">Column s of S is A q for state s. The highlighted entry in each column is the move we play from that state; together they make the one-hot matrix B.</p>
+    <table class="grid9" id="pol" style="font-size:21px"></table>
+  </section>
+
+  <section class="panel" id="p-ahead" role="tabpanel" hidden>
+    <div class="lede"><h1>Look ahead</h1><p>Mᵗ x, step by step</p></div>
+    <p class="empty-note">Optional panel, not drawn in this draft: an animated bar chart of the 9 states settling towards π, capped at 100 steps.</p>
+  </section>
+</main>
+
+<script>
+// Pooled bot numbers from web/public/bots/bot_rps_human_combined.json
+var BOT={"A":[[0,-1,1],[1,0,-1],[-1,1,0]],"tokens":["RW","RL","RT","PW","PL","PT","SW","SL","ST"],"P":[[0.35163,0.355785,0.373413,0.299388,0.321538,0.357619,0.354177,0.285514,0.298355],[0.35428,0.337899,0.292265,0.326781,0.318307,0.319239,0.319438,0.351006,0.351062],[0.29409,0.306316,0.334323,0.373832,0.360155,0.323142,0.326386,0.36348,0.350583]],"pi":[0.0,0.355871,0.0,0.0,0.0,0.325943,0.318186,0.0,0.0],"opening":{"q":[0.355871,0.325943,0.318186],"scores":[-0.007756,0.037685,-0.029928],"move":"P","counter_move":"P","splits":[[0.318186,0.355871,0.325943],[0.355871,0.325943,0.318186],[0.325943,0.318186,0.355871]]},"dec":{"RW":{"q":[0.35163,0.35428,0.29409],"scores":[-0.06019,0.057539,0.002651],"move":"P","counter_move":"S","splits":[[0.29409,0.35163,0.35428],[0.35163,0.35428,0.29409],[0.35428,0.29409,0.35163]]},"RL":{"q":[0.355785,0.337899,0.306316],"scores":[-0.031582,0.049468,-0.017886],"move":"P","counter_move":"P","splits":[[0.306316,0.355785,0.337899],[0.355785,0.337899,0.306316],[0.337899,0.306316,0.355785]]},"RT":{"q":[0.373413,0.292265,0.334323],"scores":[0.042058,0.03909,-0.081148],"move":"R","counter_move":"P","splits":[[0.334323,0.373413,0.292265],[0.373413,0.292265,0.334323],[0.292265,0.334323,0.373413]]},"PW":{"q":[0.299388,0.326781,0.373832],"scores":[0.047051,-0.074444,0.027393],"move":"R","counter_move":"R","splits":[[0.373832,0.299388,0.326781],[0.299388,0.326781,0.373832],[0.326781,0.373832,0.299388]]},"PL":{"q":[0.321538,0.318307,0.360155],"scores":[0.041848,-0.038617,-0.003232],"move":"R","counter_move":"R","splits":[[0.360155,0.321538,0.318307],[0.321538,0.318307,0.360155],[0.318307,0.360155,0.321538]]},"PT":{"q":[0.357619,0.319239,0.323142],"scores":[0.003903,0.034477,-0.03838],"move":"P","counter_move":"P","splits":[[0.323142,0.357619,0.319239],[0.357619,0.319239,0.323142],[0.319239,0.323142,0.357619]]},"SW":{"q":[0.354177,0.319438,0.326386],"scores":[0.006948,0.027791,-0.034739],"move":"P","counter_move":"P","splits":[[0.326386,0.354177,0.319438],[0.354177,0.319438,0.326386],[0.319438,0.326386,0.354177]]},"SL":{"q":[0.285514,0.351006,0.36348],"scores":[0.012475,-0.077967,0.065492],"move":"S","counter_move":"R","splits":[[0.36348,0.285514,0.351006],[0.285514,0.351006,0.36348],[0.351006,0.36348,0.285514]]},"ST":{"q":[0.298355,0.351062,0.350583],"scores":[-0.000479,-0.052228,0.052707],"move":"S","counter_move":"S","splits":[[0.350583,0.298355,0.351062],[0.298355,0.351062,0.350583],[0.351062,0.350583,0.298355]]}},"S":[[-0.06019,-0.031582,0.042058,0.047051,0.041848,0.003903,0.006948,0.012475,-0.000479],[0.057539,0.049468,0.03909,-0.074444,-0.038617,0.034477,0.027791,-0.077967,-0.052228],[0.002651,-0.017886,-0.081148,0.027393,-0.003232,-0.03838,-0.034739,0.065492,0.052707]],"long":{"eig":[[1.0,0.0],[0.882586,0.0],[0.141486,0.0],[0.015058,0.03519],[0.015058,-0.03519],[0.008727,0.0],[-0.007318,0.0],[-0.003412,0.0],[0.0,0.0]],"mod":[1.0,0.882586,0.141486,0.038276,0.038276,0.008727,0.007318,0.003412,0.0],"fade":19,"rates":{"win":0.318186,"lose":0.355871,"tie":0.325943},"edge":0.037685,"trans":["RW","RT","PW","PL","SL","ST"],"M":[[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.285514,0.298355],[0.35163,0.355785,0.0,0.0,0.0,0.357619,0.354177,0.0,0.0],[0.0,0.0,0.373413,0.299388,0.321538,0.0,0.0,0.0,0.0],[0.0,0.0,0.292265,0.326781,0.318307,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.351006,0.351062],[0.35428,0.337899,0.0,0.0,0.0,0.319239,0.319438,0.0,0.0],[0.29409,0.306316,0.0,0.0,0.0,0.323142,0.326386,0.0,0.0],[0.0,0.0,0.334323,0.373832,0.360155,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.36348,0.350583]]}};
+var A=BOT.A,M=["R","P","S"],T=BOT.tokens,NAME={R:"Rock",P:"Paper",S:"Scissors"},OUT={W:"won",L:"lost",T:"tied"};
+var g,seen=false;
+// Mock only: #split and #cycle preview the two fallback banners with synthetic chain data.
+var MODE=location.hash.indexOf("#split")===0?"split":location.hash.indexOf("#cycle")===0?"cycle":"ok";
+if(MODE!=="ok"){
+  var b3=[0.332755,0.330340,0.336904];
+  BOT.opening={q:b3,scores:[0.006564,-0.004149,-0.002415],move:"R",counter_move:"R",splits:[[b3[2],b3[0],b3[1]],[b3[0],b3[1],b3[2]],[b3[1],b3[2],b3[0]]]};
+  BOT.long.eig[1]=MODE==="split"?[1,0]:[-1,0];BOT.long.mod[1]=1;BOT.long.fade=null;
+  BOT.groups=[{states:["RL","PT","SW"],rates:{win:0.318,lose:0.356,tie:0.326}},{states:["RT","PW","PL"],rates:{win:0.341,lose:0.322,tie:0.337}}];
+}
+function warnHTML(){
+  if(MODE==="ok")return "";
+  var h=MODE==="split"?"Eigenvalue 1 appears "+BOT.groups.length+" times, so the chain splits into "+BOT.groups.length+" closed groups.":"An eigenvalue other than 1 has |λ| = 1, so the chain cycles and never settles.";
+  var t=MODE==="split"?"There is no single steady state: the long run depends on where the game starts.":"π is still unique, as the share of each state averaged over rounds, but Mᵗ x keeps cycling instead of settling on it.";
+  return '<div class="warn" role="status"><svg><use href="#warn"/></svg><div><h3>'+h+"</h3><p>"+t+'</p><span class="fb2">Round 1 uses the 3 × 3 steady state instead</span></div></div>';
+}
+function $(id){return document.getElementById(id);}
+function u(v){return (v<0&&Math.abs(v)>=5e-4?"−":"")+Math.abs(v).toFixed(3);}
+function f(v){return (v>0?"+":v<0?"−":"")+Math.abs(v).toFixed(3);}
+function vec(a,sign,hl){return '<span class="vec">'+a.map(function(v,i){return "<span"+(i===hl?' class="hl"':"")+">"+(sign?f(v):u(v))+"</span>";}).join("")+"</span>";}
+function icon(m){return '<svg class="ic m'+m+'"><use href="#m'+m+'"/></svg>';}
+function card(m,side,won){return '<div class="crd '+side+(won?" won":"")+'">'+icon(m)+NAME[m]+"</div>";}
+function rnd(){return M[Math.floor(Math.random()*3)];}
+function newMatch(n){g={n:n||(g?g.n:3),bot:0,hum:0,round:1,last:null,prev:null,over:false,hist:[],their:rnd(),done:false};render();}
+function render(){
+  var d=g.last?BOT.dec[g.last]:BOT.opening,need=(g.n+1)/2;
+  $("sBot").textContent=$("mBot").textContent=g.bot;$("sHum").textContent=$("mHum").textContent=g.hum;
+  $("roundLab").textContent="Best of "+g.n+" · first to "+need+" · Round "+g.round;
+  if(g.prev){var p=g.prev;$("prev").innerHTML=card(p.b,"b",p.o==="L")+'<div class="pcap">Last round: '+(p.o==="T"?"tie, replayed":p.o==="L"?"we won":"they won")+"</div>"+card(p.h,"h",p.o==="W");}
+  else $("prev").innerHTML='<div class="crd b empty">Our card</div><div class="pcap">No previous round yet</div><div class="crd h empty">Their card</div>';
+  $("rTitle").textContent="Round "+g.round;
+  $("xLab").innerHTML=g.last?"x = <b>"+g.last+"</b>: they played "+NAME[g.last[0]]+" and "+OUT[g.last[1]]:(MODE==="ok"?"x = <b>π</b>: no previous round":"x = <b>π of the 3 × 3 matrix</b>: no previous round");
+  $("rIntro").textContent="Same three steps every round. Only x changes.";
+  $("warnR").innerHTML=g.round===1?warnHTML():"";
+  // step 1
+  var col=g.last?T.indexOf(g.last):-1, P=BOT.P;
+  var pm='<span class="mstack"><span class="collbl">'+T.map(function(t,j){return "<span"+(j===col?' class="hl"':"")+">"+t+"</span>";}).join("")+'</span><span class="mat" style="grid-template-columns:repeat(9,auto)">'+P.map(function(row){return row.map(function(v,j){return "<span"+(j===col?' class="hl"':"")+">"+u(v)+"</span>";}).join("");}).join("")+"</span></span>";
+  if(g.last){
+    var first=!seen;
+    $("s1text").textContent=first?"x is one-hot: 1 for the state just played, 0 for the other 8. Multiplying P by it picks out one column, so this step is a lookup.":"x is one-hot, so q is column "+g.last+" of P.";
+    var xv='<span class="vec">'+T.map(function(t,j){return "<span"+(j===col?' class="hl"':"")+">"+(j===col?1:0)+"</span>";}).join("")+"</span>";
+    $("s1eq").innerHTML='<span class="lab">q =</span>'+pm+(first?xv:"")+" = "+vec(d.q);
+  } else if(MODE!=="ok"){
+    $("s1text").textContent=(MODE==="split"?"Round 1 has no last state, and the 9 × 9 matrix has no single π.":"Round 1 has no last state, and the 9 × 9 chain never settles on its π.")+" So q₀ is the steady state of the 3 × 3 matrix, the habit from training, used directly.";
+    $("s1eq").innerHTML='<span class="lab">q₀ = π of the 3 × 3 matrix =</span>'+vec(d.q);
+  } else {
+    $("s1text").textContent="Round 1 has no last state, so x is the steady state π (see Long run). P π averages all 9 columns of P, weighted by π.";
+    $("s1eq").innerHTML='<span class="lab">q₀ =</span>'+pm+vec(BOT.pi)+" = "+vec(d.q);
+  }
+  var mx=Math.max.apply(null,d.q);
+  $("qBars").innerHTML=d.q.map(function(v,i){return "<div>"+u(v)+'<i style="height:'+(v/mx*150)+"px;background:var(--"+M[i].toLowerCase()+')"></i></div>';}).join("");
+  // step 2
+  var am='<span class="mat">'+A.map(function(r){return r.map(function(v){return "<span>"+(v<0?"−"+(-v):v)+"</span>";}).join("");}).join("")+"</span>";
+  var bi=M.indexOf(d.move);
+  $("s2eq").innerHTML='<span class="lab">A q =</span>'+am+vec(d.q)+" = "+vec(d.scores,true,g.done?bi:-1);
+  $("stk").innerHTML=d.splits.map(function(s,i){return '<div class="st"><span>'+icon(M[i])+" Our "+NAME[M[i]]+'</span><span class="sb"><i style="width:'+s[0]*100+'%;background:var(--w)">'+u(s[0])+'</i><i class="t" style="width:'+s[1]*100+'%;background:var(--t)">'+u(s[1])+'</i><i style="width:'+s[2]*100+'%;background:var(--l)">'+u(s[2])+"</i></span><span>"+f(d.scores[i])+"</span></div>";}).join("");
+  // step 3
+  document.querySelectorAll(".mv").forEach(function(b){b.className="mv"+(g.done&&b.dataset.m===d.move?" yes":"");b.disabled=g.done||g.over;});
+  if(!g.done){$("fb").textContent="";$("fb").className="fb";$("flag").textContent="";$("result").className="result";}
+  document.querySelectorAll(".len button").forEach(function(b){b.setAttribute("aria-pressed",String(+b.dataset.n===g.n));b.disabled=g.round>1||g.done;});
+  renderTally();
+}
+function choose(m,btn){
+  if(g.done||g.over)return;
+  var d=g.last?BOT.dec[g.last]:BOT.opening;
+  if(m!==d.move){btn.classList.remove("no");void btn.offsetWidth;btn.classList.add("no");$("fb").className="fb bad";$("fb").textContent=NAME[m]+" scores "+f(d.scores[M.indexOf(m)])+". That's not the largest entry of A q.";return;}
+  var h=g.their,a=A[M.indexOf(m)][M.indexOf(h)],o=a===1?"L":a===-1?"W":"T";
+  g.done=true;g.pending={b:m,h:h,o:o,round:g.round,q:d.q};
+  $("fb").className="fb";$("fb").textContent="Correct: "+NAME[m]+" scores "+f(d.scores[M.indexOf(m)])+", the largest entry.";
+  var qi=d.q.indexOf(Math.max.apply(null,d.q));
+  $("flag").textContent=m!==d.counter_move?"Note: this is not the counter to their likeliest move ("+NAME[M[qi]]+"), which would be "+NAME[d.counter_move]+".":"";
+  if(o==="L")g.bot++;else if(o==="W")g.hum++;
+  var end=g.bot===(g.n+1)/2||g.hum===(g.n+1)/2;
+  $("result").innerHTML='<div class="pair">'+card(m,"b",o==="L")+card(h,"h",o==="W")+"</div><div><h3>"+(o==="T"?"Tie. Replay the round":o==="L"?"We win round "+g.round:"They win round "+g.round)+"</h3><p>We played "+NAME[m]+", they played "+NAME[h]+". New state: "+h+o+"."+(end?" "+(g.bot>g.hum?"We win the match "+g.bot+"–"+g.hum+".":"They win the match "+g.hum+"–"+g.bot+"."):"")+'</p></div><button class="next" id="next">'+(end?"New match":"Next round")+"</button>";
+  $("result").className="result on";
+  $("sBot").textContent=$("mBot").textContent=g.bot;$("sHum").textContent=$("mHum").textContent=g.hum;
+  document.querySelectorAll(".mv").forEach(function(b){b.className="mv"+(b.dataset.m===m?" yes":"");b.disabled=true;});
+  $("next").onclick=function(){
+    if(end){newMatch();scrollTo(0,0);return;}
+    var p=g.pending;if(g.last)seen=true;g.hist.push(p);g.prev=p;g.last=p.h+p.o;g.round++;g.done=false;g.their=rnd();
+    render();scrollTo(0,0);
+  };
+  if(end){g.over=true;g.hist.push(g.pending);renderTally();}
+}
+function renderTally(){
+  $("tally").innerHTML=g.hist.length?g.hist.map(function(h){var mx=Math.max.apply(null,h.q);return "<figure><div class=\"vb\">"+h.q.map(function(v,i){return "<div>"+u(v)+'<i style="height:'+(v/mx*80)+"px;background:var(--"+(M[i]===h.h?"w":"l")+')"></i></div>';}).join("")+'</div><div class="vl" style="gap:10px;font-size:15px"><span>R</span><span>P</span><span>S</span></div><figcaption>Round '+h.round+": "+NAME[h.h]+"</figcaption></figure>";}).join(""):'<p class="empty-note">No rounds played yet.</p>';
+}
+function staticPanels(){
+  var L=BOT.long;if(L.fade==null)$("fade").parentNode.textContent="Solved numerically from det(M − λI) = 0. A second eigenvalue with |λ| = 1 means the start never stops mattering.";else $("fade").textContent=L.fade;
+  $("warnL").innerHTML=warnHTML();
+  if(MODE==="split"){$("piSec").hidden=true;$("grpSec").hidden=false;
+    $("grps").innerHTML=BOT.groups.map(function(gr,i){return '<div class="grp"><h3>Group '+(i+1)+"</h3><p>States "+gr.states.join(", ")+'</p><div class="rates"><span><b>'+u(gr.rates.win)+"</b>they win</span><span><b>"+u(gr.rates.lose)+"</b>they lose</span><span><b>"+u(gr.rates.tie)+"</b>tie</span></div></div>";}).join("");}
+  $("eig").innerHTML=L.eig.map(function(e,i){var s=Math.abs(e[1])>1e-9?u(e[0])+" "+(e[1]<0?"−":"+")+" "+u(Math.abs(e[1]))+"i":u(e[0]);return '<div class="'+(i===0||(MODE==="split"&&i===1)?"one":MODE==="cycle"&&i===1?"cyc":MODE==="ok"&&i===1?"two":"")+'"><b>'+s+"</b><span>|λ| "+u(L.mod[i])+"</span></div>";}).join("");
+  var pmx=Math.max.apply(null,BOT.pi),oc={W:"w",L:"l",T:"t"};
+  $("pi").innerHTML=BOT.pi.map(function(v,i){return "<div>"+u(v)+'<i style="height:'+(v/pmx*180)+"px;background:var(--"+oc[T[i][1]]+')"></i></div>';}).join("");
+  $("pil").innerHTML=T.map(function(t){return "<span>"+t+"</span>";}).join("");
+  $("rates").innerHTML="<span><b>"+u(L.rates.win)+"</b>they win</span><span><b>"+u(L.rates.lose)+"</b>they lose</span><span><b>"+u(L.rates.tie)+"</b>tie</span><span><b>"+f(L.edge)+"</b>our edge per round</span>";
+  $("trans").textContent="Transient states (π = 0): "+L.trans.join(", ")+". The long run never returns to them.";
+  $("m9").innerHTML="<tr><th></th>"+T.map(function(t){return "<th>"+t+"</th>";}).join("")+"</tr>"+L.M.map(function(r,i){return "<tr><th>"+T[i]+"</th>"+r.map(function(v){return '<td class="'+(v===0?"z":"")+'">'+(v===0?"0":u(v))+"</td>";}).join("")+"</tr>";}).join("");
+  var S=BOT.S;
+  $("pol").innerHTML="<tr><th></th>"+T.map(function(t){return "<th>"+t+"</th>";}).join("")+"</tr>"+S.map(function(r,i){return "<tr><th>Our "+M[i]+"</th>"+r.map(function(v,j){var c=[S[0][j],S[1][j],S[2][j]],best=c.indexOf(Math.max.apply(null,c))===i;return '<td class="'+(best?"best":"")+'">'+f(v)+"</td>";}).join("")+"</tr>";}).join("")+"<tr><th>We play</th>"+T.map(function(t){return "<td><b>"+BOT.dec[t].move+"</b></td>";}).join("")+"</tr>";
+}
+document.querySelectorAll(".mv").forEach(function(b){b.onclick=function(){choose(b.dataset.m,b);};});
+document.querySelectorAll(".len button").forEach(function(b){b.onclick=function(){g.n=+b.dataset.n;render();};});
+document.querySelectorAll(".tab").forEach(function(t){t.onclick=function(){document.querySelectorAll(".tab").forEach(function(x){x.setAttribute("aria-selected",String(x===t));});document.querySelectorAll(".panel").forEach(function(p){p.hidden=p.id!=="p-"+t.dataset.p;});};});
+staticPanels();newMatch(3);
+if(location.hash==="#r2"){g.their="R";choose("P",document.querySelector('.mv[data-m="P"]'));$("next").click();}
+if(location.hash==="#chosen"){g.their="S";choose("P",document.querySelector('.mv[data-m="P"]'));document.getElementById("s1").open=false;document.getElementById("s2").open=false;}
+if(/long$/.test(location.hash))document.querySelector('.tab[data-p="long"]').click();
+</script>
+</body></html>

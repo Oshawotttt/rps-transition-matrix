@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Canon</title>
+<style>
+:root{--bg:#fff;--ink:#0f172a;--acc:#4f46e5;--line:#e2e8f0}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:#f8fafc;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+.top{background:var(--bg);border-bottom:2px solid var(--line);height:300px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 120px}
+.pl{display:flex;align-items:center;gap:28px}
+.pl.b{justify-content:flex-end}
+.av{width:150px;height:150px;border-radius:50%;background:#eef2ff;display:grid;place-items:center;font-size:64px;border:4px solid var(--acc)}
+.pl h2{font-size:36px}
+.pl p{font-size:24px;color:#334155;margin-top:6px}
+.sc{text-align:center}
+.sc b{font-size:96px;display:block}
+.sc span{font-size:24px}
+.main{padding:36px 120px;display:grid;grid-template-columns:1fr;gap:18px}
+.tabsrow{display:flex;gap:10px;margin-bottom:6px}
+.tabsrow span{padding:12px 22px;border-radius:999px;background:var(--bg);border:2px solid var(--line);font-size:22px;font-weight:600}
+.tabsrow span:first-child{background:var(--acc);color:#fff;border-color:var(--acc)}
+.acc{background:var(--bg);border:2px solid var(--line);border-radius:16px;height:100px;display:flex;align-items:center;padding:0 32px;gap:24px;font-size:34px;font-weight:700}
+.acc i{font-style:normal;font-weight:400;font-size:30px;color:#334155}
+.acc u{text-decoration:none;margin-left:auto;font-size:28px;color:var(--acc)}
+.n{width:56px;height:56px;border-radius:50%;background:#eef2ff;color:var(--acc);display:grid;place-items:center;font-size:30px}
+</style></head><body>
+<div class="top">
+  <div class="pl"><div class="av">🙂</div><div><h2>You</h2><p>✓ chosen</p></div></div>
+  <div class="sc"><b>0 – 0</b><span>Best of 3 · Round 1</span></div>
+  <div class="pl b"><div><h2>Bot</h2><p>✓ chosen · show thinking</p></div><div class="av">🤖</div></div>
+</div>
+<div class="main">
+  <div class="tabsrow"><span>This round</span><span>Long run</span><span>Tally</span><span>Policy</span><span>Look ahead</span></div>
+  <div class="acc"><span class="n">1</span>Predict <i>q = P x</i><u>Expand ▾</u></div>
+  <div class="acc"><span class="n">2</span>Score <i>A q</i><u>Expand ▾</u></div>
+  <div class="acc"><span class="n">3</span>Choose <i>largest entry of A q</i><u>Expand ▾</u></div>
+</div>
+</body></html>

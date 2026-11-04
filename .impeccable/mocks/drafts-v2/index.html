@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Projector Drafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Gabarito:wght@500;700;800&family=Literata:opsz,wght@7..72,500;7..72,600;7..72,700&family=Schibsted+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--board:#eceae4;--board-ink:#1d2433}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--board:#1a1c22;--board-ink:#eceae4}}
+:root[data-theme="dark"]{--board:#1a1c22;--board-ink:#eceae4}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--board);color:var(--board-ink);font-family:'Atkinson Hyperlegible',system-ui,sans-serif}
+.board{max-width:1500px;margin:0 auto;padding:48px 16px 96px}
+.board>h1{font:800 clamp(28px,4vw,44px)/1.1 'Bricolage Grotesque';letter-spacing:-.02em}
+.board>p{font-size:18px;max-width:68ch;margin-top:12px;line-height:1.5}
+.draft{margin-top:56px}
+.draft h2{font:700 26px/1.2 'Bricolage Grotesque';letter-spacing:-.01em}
+.draft h2 b{font-weight:800;margin-right:10px}
+.draft .why{font-size:17px;line-height:1.5;max-width:80ch;margin:6px 0 16px}
+.stage{position:relative;width:100%;aspect-ratio:1440/900;overflow:hidden;border-radius:14px;box-shadow:0 18px 40px -18px rgba(0,0,0,.35)}
+.frame{position:absolute;left:0;top:0;width:1440px;height:900px;transform-origin:0 0;overflow:hidden;font-variant-numeric:tabular-nums}
+body.solo{background:#fff}
+body.solo .board{max-width:none;padding:0}
+body.solo .board>h1,body.solo .board>p,body.solo .draft>h2,body.solo .draft>.why{display:none}
+body.solo .draft{margin:0;display:none}
+body.solo .draft.on{display:block}
+body.solo .stage{width:1440px;height:900px;border-radius:0;box-shadow:none}
+::selection{background:#2f5fb3;color:#fff}
+
+/* shared notation */
+.vec,.mat{display:inline-grid;position:relative;padding:4px 14px;gap:2px 20px;text-align:right;vertical-align:middle}
+.vec::before,.vec::after,.mat::before,.mat::after{content:"";position:absolute;top:0;bottom:0;width:9px;border:2.5px solid currentColor}
+.vec::before,.mat::before{left:0;border-right:0}
+.vec::after,.mat::after{right:0;border-left:0}
+.mat{grid-template-columns:repeat(3,auto)}
+.ic{width:1em;height:1em;vertical-align:-.14em;fill:currentColor}
+
+/* characters: every colour is a custom property set by the draft */
+.rb-head,.rb-body{fill:var(--robot)}
+.rb-ear,.rb-neck,.rb-dot{fill:var(--robot2)}
+.rb-screen{fill:var(--screen)}
+.rb-eye{fill:var(--glow)}
+.rb-shine{fill:#fff}
+.rb-mouth{fill:none;stroke:var(--glow);stroke-width:4;stroke-linecap:round}
+.rb-ant{stroke:var(--robot2);stroke-width:5;stroke-linecap:round}
+.rb-bulb{fill:var(--bulb)}
+.rb-cheek{fill:var(--blush);opacity:.85}
+.rb-tie{fill:var(--tie)}
+.hu-jacket{fill:var(--jacket)}
+.hu-lapel{fill:var(--jacket2)}
+.hu-shirt{fill:var(--shirt)}
+.hu-tie{fill:var(--tie2)}
+.hu-skin{fill:var(--skin)}
+.hu-neck{fill:var(--skin2)}
+.hu-hair{fill:var(--hair)}
+.hu-eye{fill:var(--face)}
+.hu-smile{fill:none;stroke:var(--face);stroke-width:3.5;stroke-linecap:round}
+.hu-cheek{fill:var(--blush);opacity:.6}
+.ol .rb-head,.ol .rb-body,.ol .rb-ear,.ol .hu-skin,.ol .hu-jacket,.ol .hu-hair{stroke:var(--line);stroke-width:var(--olw,3)}
+
+/* ============ DRAFT 1 · Match Programme ============ */
+.d1{--paper:#fbfaf7;--ink:#1d2433;--felt:#1f4d40;--felt2:#2a5f50;--r:#c0432d;--p:#2f5fb3;--s:#c9951a;--w:#2c7a57;--t:#cfc9bc;--l:#c0432d;
+  --robot:#e9edf2;--robot2:#aeb8c6;--screen:#1d2433;--glow:#8fe3d0;--bulb:#c9951a;--blush:#f2a7a0;--tie:#c0432d;
+  --jacket:#2f5fb3;--jacket2:#244c92;--shirt:#fbfaf7;--tie2:#c9951a;--skin:#f4cfb0;--skin2:#e6b996;--hair:#3a2a22;--face:#1d2433;--line:#1d2433;
+  background:var(--paper);color:var(--ink);font-family:'Atkinson Hyperlegible',sans-serif}
+.d1 .top{height:292px;background:var(--felt);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 72px;position:relative}
+.d1 .top::after{content:"";position:absolute;inset:16px;border:1.5px solid rgba(251,250,247,.28);border-radius:14px;pointer-events:none}
+.d1 .pl{display:flex;align-items:center;gap:26px;color:var(--paper)}
+.d1 .pl.bot{justify-content:flex-end;text-align:right}
+.d1 .med{width:200px;height:200px;border-radius:50%;background:var(--felt2);box-shadow:inset 0 0 0 2px rgba(251,250,247,.5);overflow:hidden;flex:none}
+.d1 .med svg{width:100%;height:100%;display:block;transform:translateY(14px) scale(1.04)}
+.d1 .pl h3{font:800 40px/1 'Bricolage Grotesque';letter-spacing:-.02em}
+.d1 .pl p{font-size:22px;margin-top:10px;opacity:.92}
+.d1 .pl .card{display:inline-flex;align-items:center;gap:10px;margin-top:14px;background:var(--paper);color:var(--ink);border-radius:10px;padding:8px 14px;font:700 20px 'Atkinson Hyperlegible'}
+.d1 .score{text-align:center;color:var(--paper)}
+.d1 .score b{font:800 112px/1 'Bricolage Grotesque';letter-spacing:-.03em;display:block}
+.d1 .score span{font-size:22px;letter-spacing:.02em}
+.d1 .body{display:grid;grid-template-columns:1fr 330px;gap:48px;padding:34px 72px 0}
+.d1 .turn{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px}
+.d1 .turn h2{font:800 40px/1 'Bricolage Grotesque';letter-spacing:-.02em}
+.d1 .turn span{font-size:24px}
+.d1 .turn span em{font-style:normal;font-weight:700}
+.d1 .step{display:grid;grid-template-columns:56px 1fr auto;align-items:center;column-gap:22px;border-top:2px solid var(--ink);padding:14px 0}
+.d1 .step:last-child{border-bottom:2px solid var(--ink)}
+.d1 .n{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:800 26px 'Bricolage Grotesque';background:var(--ink);color:var(--paper)}
+.d1 .step.done .n{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+.d1 .step h4{font:800 30px/1 'Bricolage Grotesque';letter-spacing:-.01em}
+.d1 .step h4 i{font:400 26px 'Atkinson Hyperlegible';font-style:normal;margin-left:14px}
+.d1 .step .res{font:700 24px 'Atkinson Hyperlegible'}
+.d1 .open{grid-column:2/4;display:grid;grid-template-columns:auto 1fr;gap:44px;align-items:end;padding:18px 0 6px}
+.d1 .eq{font-size:26px;display:flex;align-items:center;gap:14px}
+.d1 .note{font-size:20px;margin-top:12px;max-width:30ch;line-height:1.35}
+.d1 .bars{display:flex;gap:26px;align-items:flex-end;height:150px;border-bottom:2px solid var(--ink);padding:0 8px}
+.d1 .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.d1 .bar i{display:block;width:100%;border-radius:8px 8px 0 0}
+.d1 .bar b{font:700 22px 'Atkinson Hyperlegible';margin-bottom:6px}
+.d1 .bar-l{display:flex;gap:26px;padding:8px 8px 0;font:700 20px 'Atkinson Hyperlegible'}
+.d1 .bar-l span{flex:1;text-align:center}
+.d1 aside h5{font:800 24px 'Bricolage Grotesque';margin-bottom:10px}
+.d1 aside .pay{border:2px solid var(--ink);border-radius:14px;padding:18px 20px}
+.d1 .pt{display:grid;grid-template-columns:auto repeat(3,1fr);gap:6px 10px;font-size:22px;text-align:center;align-items:center}
+.d1 .pt .h{font-weight:700}
+.d1 .pt .bt{text-align:left;font-weight:700}
+.d1 .pt .pos{color:var(--w);font-weight:700}.d1 .pt .neg{color:var(--l);font-weight:700}
+.d1 .cap{font-size:18px;margin-top:10px;line-height:1.35}
+.d1 nav{margin-top:20px;display:grid;gap:2px}
+.d1 nav a{font:700 21px 'Atkinson Hyperlegible';padding:9px 14px;border-radius:10px;color:var(--ink);text-decoration:none}
+.d1 nav a.on{background:var(--ink);color:var(--paper)}
+
+/* ============ DRAFT 2 · Broadcast ============ */
+.d2{--paper:#ffffff;--ink:#121826;--navy:#14213d;--navy2:#22335a;--r:#d1495b;--p:#2e6fd8;--s:#e0a526;--w:#1f8a62;--t:#d5d8de;--l:#d1495b;
+  --robot:#dfe6ee;--robot2:#9fb0c4;--screen:#14213d;--glow:#ffd166;--bulb:#d1495b;--blush:#f6b3b9;--tie:#14213d;
+  --jacket:#3c4f7a;--jacket2:#2d3d61;--shirt:#ffffff;--tie2:#d1495b;--skin:#f1c7a4;--skin2:#e0b08a;--hair:#2b211c;--face:#121826;
+  background:var(--paper);color:var(--ink);font-family:'Schibsted Grotesk',sans-serif}
+.d2 .bug{position:absolute;left:56px;right:56px;top:178px;height:122px;background:var(--navy);border-radius:16px;display:grid;grid-template-columns:260px 1fr auto 1fr 260px;align-items:center;color:#fff}
+.d2 .who{position:absolute;bottom:0;width:224px;height:224px}
+.d2 .who.h{left:12px}.d2 .who.b{right:12px}
+.d2 .who svg{width:100%;height:100%;display:block}
+.d2 .nm{font:800 42px/1 'Schibsted Grotesk';letter-spacing:-.02em}
+.d2 .nm small{display:block;font:500 20px 'Schibsted Grotesk';letter-spacing:0;margin-top:8px;color:#c9d3e6}
+.d2 .nm.r{text-align:right}
+.d2 .sc{display:flex;gap:6px;margin:0 24px}
+.d2 .sc b{background:#fff;color:var(--navy);font:800 72px/1 'Schibsted Grotesk';width:92px;height:96px;display:grid;place-items:center;border-radius:10px}
+.d2 .meta{position:absolute;top:30px;left:56px;right:56px;display:flex;justify-content:space-between;align-items:baseline}
+.d2 .meta h1{font:800 36px 'Schibsted Grotesk';letter-spacing:-.02em}
+.d2 .meta span{font:500 24px 'Schibsted Grotesk'}
+.d2 .meta span b{font-weight:800}
+.d2 .cols{position:absolute;left:56px;right:56px;top:334px;bottom:40px;display:grid;grid-template-columns:1fr 1.25fr 1fr;column-gap:0}
+.d2 .col{padding:0 34px;border-left:2px solid var(--t)}
+.d2 .col:first-child{padding-left:0;border-left:0}
+.d2 .col:last-child{padding-right:0}
+.d2 .lab{display:flex;align-items:center;gap:14px;font:800 30px 'Schibsted Grotesk';letter-spacing:-.01em}
+.d2 .lab i{width:42px;height:42px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font:800 22px 'Schibsted Grotesk';font-style:normal}
+.d2 .lab em{font:500 26px 'Atkinson Hyperlegible';font-style:normal;margin-left:auto}
+.d2 .math{font-family:'Atkinson Hyperlegible';font-size:24px;display:flex;align-items:center;gap:12px;margin:22px 0 10px;flex-wrap:wrap}
+.d2 .sub{font-family:'Atkinson Hyperlegible';font-size:19px;line-height:1.35}
+.d2 .hb{margin-top:20px;display:grid;gap:12px}
+.d2 .hr{display:grid;grid-template-columns:132px 1fr 70px;align-items:center;gap:12px;font:700 21px 'Atkinson Hyperlegible'}
+.d2 .hr .tr{height:30px;background:#f1f3f6;border-radius:6px;overflow:hidden}
+.d2 .hr .tr i{display:block;height:100%;border-radius:6px}
+.d2 .hr span:last-child{text-align:right}
+.d2 .st{display:grid;grid-template-columns:142px 1fr 84px;align-items:center;gap:12px;font:700 21px 'Atkinson Hyperlegible'}
+.d2 .st .sb{display:flex;height:30px;border-radius:6px;overflow:hidden}
+.d2 .st .sb i{display:block;height:100%}
+.d2 .st.pick{background:#eef3fb;border-radius:10px;padding:6px 8px;margin:0 -8px}
+.d2 .key{display:flex;gap:18px;font:500 18px 'Atkinson Hyperlegible';margin-top:12px}
+.d2 .key i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.d2 .pick-card{margin-top:22px;background:var(--navy);color:#fff;border-radius:16px;padding:22px 24px;display:flex;align-items:center;gap:20px}
+.d2 .pick-card svg.ic{width:72px;height:72px;fill:var(--glow)}
+.d2 .pick-card b{font:800 40px/1 'Schibsted Grotesk';display:block}
+.d2 .pick-card span{font:500 20px 'Atkinson Hyperlegible';color:#c9d3e6}
+.d2 .tiny{margin-top:16px}
+.d2 .tiny .mat{font:500 21px 'Atkinson Hyperlegible';gap:0 14px}
+
+/* ============ DRAFT 3 · Portrait & Ledger ============ */
+.d3{--paper:#fcfbf8;--ink:#23222a;--wall:#dde5ef;--wall2:#c9d5e4;--rose:#a3405a;--r:#a3405a;--p:#2d5a8c;--s:#b8892a;--w:#2d6f55;--t:#d9d4cb;--l:#a3405a;
+  --robot:#f5f7fa;--robot2:#b6c2d1;--screen:#23222a;--glow:#9fe0ff;--bulb:#a3405a;--blush:#f0b2bd;--tie:#a3405a;
+  --jacket:#3d3a4a;--jacket2:#2d2a38;--shirt:#fcfbf8;--tie2:#a3405a;--skin:#f2cdb2;--skin2:#e3b897;--hair:#4b3426;--face:#23222a;
+  background:var(--paper);color:var(--ink);font-family:'Atkinson Hyperlegible',sans-serif;display:grid;grid-template-columns:470px 1fr}
+.d3 .gal{background:var(--wall);position:relative;display:flex;flex-direction:column;justify-content:flex-end}
+.d3 .frm{position:absolute;left:56px;right:56px;top:56px;height:520px;background:var(--wall2);border-radius:200px 200px 14px 14px;overflow:hidden}
+.d3 .frm svg{position:absolute;left:-10px;right:-10px;bottom:-6px;width:calc(100% + 20px);height:auto}
+.d3 .plate{margin:0 56px 40px;background:var(--paper);border-radius:12px;padding:20px 22px}
+.d3 .plate h3{font:700 34px/1 'Literata';letter-spacing:-.01em}
+.d3 .plate p{font-size:19px;margin-top:8px;line-height:1.35}
+.d3 .vs{display:flex;align-items:center;gap:16px;margin:0 56px 20px}
+.d3 .vs .mini{width:92px;height:92px;border-radius:50%;background:var(--paper);overflow:hidden;flex:none}
+.d3 .vs .mini svg{width:100%;height:100%;transform:translateY(8px)}
+.d3 .vs b{font:700 26px 'Literata'}
+.d3 .vs span{display:block;font-size:18px;margin-top:4px}
+.d3 .led{padding:48px 64px 0 56px}
+.d3 .hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:18px}
+.d3 .hd h1{font:600 46px/1 'Literata';letter-spacing:-.02em}
+.d3 .hd .sco{text-align:right;font-size:22px}
+.d3 .hd .sco b{font:700 52px/1 'Literata';display:block;letter-spacing:-.02em}
+.d3 .x{font-size:23px;margin:16px 0 8px}
+.d3 .x b{font-weight:700}
+.d3 .row{display:grid;grid-template-columns:150px 1fr auto;align-items:center;padding:13px 0;border-bottom:1px solid var(--t);font-size:24px}
+.d3 .row h4{font:600 28px 'Literata'}
+.d3 .row .f{font-size:24px}
+.d3 .row .v{font-weight:700}
+.d3 .row.open{border-bottom:0;padding-bottom:0}
+.d3 .exp{display:grid;grid-template-columns:auto 1fr;gap:36px;padding:16px 0 18px;border-bottom:1px solid var(--t);align-items:center}
+.d3 .exp .m{display:flex;align-items:center;gap:12px;font-size:22px}
+.d3 .st{display:grid;grid-template-columns:96px 1fr 80px;gap:12px;align-items:center;font:700 20px 'Atkinson Hyperlegible';margin-bottom:12px}
+.d3 .st .sb{display:flex;height:28px;border-radius:5px;overflow:hidden}
+.d3 .st .sb i{display:block;height:100%}
+.d3 .st span:last-child{text-align:right}
+.d3 .st.pick span:first-child{color:var(--rose)}
+.d3 .key{display:flex;gap:18px;font-size:17px}
+.d3 .key i{display:inline-block;width:13px;height:13px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.d3 .foot{display:flex;gap:28px;margin-top:22px;font:600 21px 'Literata'}
+.d3 .foot a{color:var(--ink);text-decoration:none;padding-bottom:4px}
+.d3 .foot a.on{box-shadow:inset 0 -3px 0 var(--rose)}
+
+/* ============ DRAFT 4 · Across the Table ============ */
+.d4{--paper:#fbfbf8;--ink:#20232b;--wall:#f1efe8;--table:#c9d8c5;--rim:#7f9a7b;--r:#c24b3a;--p:#3462ad;--s:#d39b22;--w:#2f7b55;--t:#d8d5cc;--l:#c24b3a;
+  --robot:#e6ebf1;--robot2:#a9b6c6;--screen:#20232b;--glow:#a6f0c6;--bulb:#d39b22;--blush:#f4b0a6;--tie:#3462ad;
+  --jacket:#b4483a;--jacket2:#963a2f;--shirt:#fbfbf8;--tie2:#20232b;--skin:#f3cfae;--skin2:#e3b893;--hair:#2e2420;--face:#20232b;--line:#20232b;--olw:2.5;
+  background:var(--paper);color:var(--ink);font-family:'Atkinson Hyperlegible',sans-serif}
+.d4 .scene{position:relative;height:430px;background:var(--wall);overflow:hidden}
+.d4 .bust{position:absolute;bottom:96px;width:300px;height:300px}
+.d4 .bust.h{left:250px}.d4 .bust.b{right:250px}
+.d4 .bust svg{width:100%;height:100%;display:block}
+.d4 .tbl{position:absolute;left:0;right:0;bottom:0;height:120px;background:var(--table);border-top:10px solid var(--rim)}
+.d4 .crd{position:absolute;bottom:34px;width:118px;height:150px;background:var(--paper);border-radius:12px;box-shadow:0 10px 18px -8px rgba(32,35,43,.45);display:grid;place-items:center;align-content:center;gap:8px;font:700 20px 'Atkinson Hyperlegible'}
+.d4 .crd svg.ic{width:62px;height:62px}
+.d4 .crd.h{left:566px;transform:rotate(-5deg)}
+.d4 .crd.b{right:566px;transform:rotate(5deg)}
+.d4 .mid{position:absolute;left:50%;top:44px;transform:translateX(-50%);text-align:center}
+.d4 .mid .s{font:800 96px/1 'Gabarito';letter-spacing:-.03em}
+.d4 .mid .s span{display:inline-block;width:64px}
+.d4 .mid p{font-size:22px;margin-top:8px}
+.d4 .mid .rr{display:inline-block;margin-top:16px;background:var(--ink);color:var(--paper);border-radius:999px;padding:8px 18px;font:700 20px 'Atkinson Hyperlegible'}
+.d4 .tag{position:absolute;top:48px;font:800 34px/1 'Gabarito'}
+.d4 .tag small{display:block;font:400 20px 'Atkinson Hyperlegible';margin-top:8px}
+.d4 .tag.h{left:72px}.d4 .tag.b{right:72px;text-align:right}
+.d4 .strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;padding:30px 64px 0;align-items:start}
+.d4 .sp{padding:0 30px;border-left:2px solid var(--t)}
+.d4 .sp:first-child{padding-left:0;border-left:0}
+.d4 .sp h4{font:800 30px 'Gabarito';display:flex;align-items:center;gap:12px}
+.d4 .sp h4 i{font:800 22px 'Gabarito';font-style:normal;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--paper)}
+.d4 .sp .eq{font-size:24px;display:flex;align-items:center;gap:12px;margin:16px 0 12px}
+.d4 .vb{display:flex;align-items:flex-end;gap:18px;height:118px;border-bottom:2px solid var(--ink)}
+.d4 .vb div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font:700 20px 'Atkinson Hyperlegible'}
+.d4 .vb i{display:block;width:100%;border-radius:7px 7px 0 0;margin-top:4px}
+.d4 .vl{display:flex;gap:18px;margin-top:6px;font:700 19px 'Atkinson Hyperlegible'}
+.d4 .vl span{flex:1;text-align:center}
+.d4 .vl svg.ic{width:22px;height:22px}
+.d4 .ch{display:flex;align-items:center;gap:18px;margin-top:14px;background:var(--wall);border-radius:14px;padding:16px 18px}
+.d4 .ch svg.ic{width:64px;height:64px;color:var(--p)}
+.d4 .ch b{font:800 34px/1 'Gabarito';display:block}
+.d4 .ch span{font-size:19px;line-height:1.3;display:block;margin-top:6px}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="robot" viewBox="0 0 200 200">
+      <line class="rb-ant" x1="100" y1="42" x2="100" y2="22"/>
+      <circle class="rb-bulb" cx="100" cy="16" r="8"/>
+      <rect class="rb-ear" x="24" y="72" width="16" height="38" rx="7"/>
+      <rect class="rb-ear" x="160" y="72" width="16" height="38" rx="7"/>
+      <rect class="rb-neck" x="86" y="136" width="28" height="16" rx="4"/>
+      <path class="rb-body" d="M46 204V176c0-17 12-28 30-28h48c18 0 30 11 30 28v28z"/>
+      <rect class="rb-head" x="36" y="38" width="128" height="102" rx="32"/>
+      <rect class="rb-screen" x="52" y="56" width="96" height="64" rx="22"/>
+      <ellipse class="rb-eye" cx="79" cy="85" rx="8.5" ry="11"/>
+      <ellipse class="rb-eye" cx="121" cy="85" rx="8.5" ry="11"/>
+      <circle class="rb-shine" cx="82" cy="80" r="2.6"/>
+      <circle class="rb-shine" cx="124" cy="80" r="2.6"/>
+      <path class="rb-mouth" d="M91 104q9 7 18 0"/>
+      <circle class="rb-cheek" cx="64" cy="104" r="5"/>
+      <circle class="rb-cheek" cx="136" cy="104" r="5"/>
+      <path class="rb-tie" d="M100 162 80 151v22zM100 162l20-11v22z"/>
+      <circle class="rb-tie" cx="100" cy="162" r="5.5"/>
+      <circle class="rb-dot" cx="86" cy="188" r="3.5"/><circle class="rb-dot" cx="100" cy="188" r="3.5"/><circle class="rb-dot" cx="114" cy="188" r="3.5"/>
+    </symbol>
+    <symbol id="human" viewBox="0 0 200 200">
+      <rect class="hu-neck" x="89" y="122" width="22" height="28" rx="6"/>
+      <path class="hu-jacket" d="M40 204v-24c0-22 16-34 40-36h40c24 2 40 14 40 36v24z"/>
+      <path class="hu-shirt" d="M82 144h36l-18 38z"/>
+      <path class="hu-tie" d="M100 150l-6 7 6 24 6-24z"/>
+      <path class="hu-lapel" d="M82 144l18 38-11 6-15-38zM118 144l-18 38 11 6 15-38z"/>
+      <circle class="hu-skin" cx="57" cy="94" r="9"/>
+      <circle class="hu-skin" cx="143" cy="94" r="9"/>
+      <circle class="hu-skin" cx="100" cy="88" r="44"/>
+      <path class="hu-hair" d="M55 92c-4-34 18-56 46-56 29 0 50 20 46 54-5-11-9-19-16-25-16 11-42 15-64 9-6 5-10 11-12 18z"/>
+      <ellipse class="hu-eye" cx="84" cy="96" rx="4.6" ry="6"/>
+      <ellipse class="hu-eye" cx="116" cy="96" rx="4.6" ry="6"/>
+      <circle class="hu-cheek" cx="72" cy="110" r="6"/>
+      <circle class="hu-cheek" cx="128" cy="110" r="6"/>
+      <path class="hu-smile" d="M92 112q8 7 16 0"/>
+    </symbol>
+    <symbol id="mR" viewBox="0 0 48 48"><path d="M8 31c-2-10 6-19 17-19s18 8 16 18c-1 8-9 11-16 11-9 0-16-3-17-10z"/></symbol>
+    <symbol id="mP" viewBox="0 0 48 48"><path d="M11 5h20l9 9v29H11z"/><path d="M31 5v9h9" fill="#fff" opacity=".45"/></symbol>
+    <symbol id="mS" viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"><circle cx="14" cy="35" r="6.5"/><circle cx="34" cy="35" r="6.5"/><path d="M18 30 35 6M30 30 13 6"/></g></symbol>
+  </defs>
+</svg>
+
+<main class="board">
+  <h1>Projector view: four more drafts</h1>
+  <p>All four keep the rulebook idea: a match on top, the bot's three steps below. Each one is drawn at 1440 × 900 and shows round 2 with the pooled bot's real numbers (x = RL). Robot and human are the same two characters, dressed for a formal match, restyled per draft.</p>
+
+  <!-- 1 -->
+  <section class="draft" id="d1">
+    <h2><b>1</b>Match Programme</h2>
+    <p class="why">The current rulebook, grown up. Deep bottle-green felt instead of bright green, thin rules instead of 5px outlines, characters in medallions. The three steps are a numbered list, not chunky bars, and the open step shows its maths and chart side by side.</p>
+    <div class="stage"><div class="frame d1">
+      <header class="top">
+        <div class="pl">
+          <div class="med"><svg><use href="#human"/></svg></div>
+          <div><h3>You</h3><p>Playing from the corner</p><span class="card"><svg class="ic"><use href="#mR"/></svg>Rock last round</span></div>
+        </div>
+        <div class="score"><b>0 – 1</b><span>Best of 3 · Round 2</span></div>
+        <div class="pl bot">
+          <div><h3>The Bot</h3><p>Thinking in matrices</p><span class="card"><svg class="ic"><use href="#mP"/></svg>Paper last round</span></div>
+          <div class="med"><svg><use href="#robot"/></svg></div>
+        </div>
+      </header>
+      <div class="body">
+        <div>
+          <div class="turn"><h2>The bot's turn</h2><span>x = <em>RL</em>, you played Rock and lost</span></div>
+          <div class="step">
+            <span class="n">1</span><h4>Predict<i>q = P x</i></h4><span class="res">R is most likely</span>
+            <div class="open">
+              <div>
+                <div class="eq">q = <span class="vec"><span>0.356</span><span>0.338</span><span>0.306</span></span></div>
+                <p class="note">One-hot x picks column RL of P. The step is a lookup.</p>
+              </div>
+              <div>
+                <div class="bars">
+                  <div class="bar"><b>0.356</b><i style="height:100%;background:var(--r)"></i></div>
+                  <div class="bar"><b>0.338</b><i style="height:95%;background:var(--p)"></i></div>
+                  <div class="bar"><b>0.306</b><i style="height:86%;background:var(--s)"></i></div>
+                </div>
+                <div class="bar-l"><span>Rock</span><span>Paper</span><span>Scissors</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="step done"><span class="n">2</span><h4>Score<i>A q</i></h4><span class="res">[−0.032, 0.049, −0.018]ᵀ</span></div>
+          <div class="step done"><span class="n">3</span><h4>Choose<i>largest entry</i></h4><span class="res">Paper</span></div>
+        </div>
+        <aside>
+          <h5>Payoff A</h5>
+          <div class="pay">
+            <div class="pt">
+              <span></span><span class="h">R</span><span class="h">P</span><span class="h">S</span>
+              <span class="bt">Bot R</span><span>0</span><span class="neg">−1</span><span class="pos">+1</span>
+              <span class="bt">Bot P</span><span class="pos">+1</span><span>0</span><span class="neg">−1</span>
+              <span class="bt">Bot S</span><span class="neg">−1</span><span class="pos">+1</span><span>0</span>
+            </div>
+            <p class="cap">Rows: bot's move. Columns: your move.</p>
+          </div>
+          <nav><a class="on" href="#">This round</a><a href="#">Long run</a><a href="#">Tally</a><a href="#">Policy</a><a href="#">Look ahead</a></nav>
+        </aside>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 2 -->
+  <section class="draft" id="d2">
+    <h2><b>2</b>Broadcast</h2>
+    <p class="why">A sports-broadcast score bar, with the two players standing behind it like cut-in portraits. Below it, all three steps sit side by side every round, so the audience sees that only x changes. No accordion to open.</p>
+    <div class="stage"><div class="frame d2">
+      <div class="meta"><h1>How the bot picks its move</h1><span>Best of 3 · Round 2 · x = <b>RL</b></span></div>
+      <div class="bug">
+        <div class="who h"><svg><use href="#human"/></svg></div>
+        <span></span>
+        <div class="nm">You<small>Rock last round</small></div>
+        <div class="sc"><b>0</b><b>1</b></div>
+        <div class="nm r">The Bot<small>Paper last round</small></div>
+        <div class="who b"><svg><use href="#robot"/></svg></div>
+      </div>
+      <div class="cols">
+        <div class="col">
+          <div class="lab"><i>1</i>Predict<em>q = P x</em></div>
+          <div class="math">q = column RL of P = <span class="vec"><span>0.356</span><span>0.338</span><span>0.306</span></span></div>
+          <div class="hb">
+            <div class="hr"><span><svg class="ic" style="color:var(--r)"><use href="#mR"/></svg> Rock</span><span class="tr"><i style="width:89%;background:var(--r)"></i></span><span>0.356</span></div>
+            <div class="hr"><span><svg class="ic" style="color:var(--p)"><use href="#mP"/></svg> Paper</span><span class="tr"><i style="width:84.5%;background:var(--p)"></i></span><span>0.338</span></div>
+            <div class="hr"><span><svg class="ic" style="color:var(--s)"><use href="#mS"/></svg> Scissors</span><span class="tr"><i style="width:76.5%;background:var(--s)"></i></span><span>0.306</span></div>
+          </div>
+          <p class="sub" style="margin-top:14px">Your chance of throwing each move next.</p>
+        </div>
+        <div class="col">
+          <div class="lab"><i>2</i>Score<em>A q</em></div>
+          <div class="math"><span class="tiny"><span class="mat"><span>0</span><span>−1</span><span>1</span><span>1</span><span>0</span><span>−1</span><span>−1</span><span>1</span><span>0</span></span></span><span class="vec"><span>0.356</span><span>0.338</span><span>0.306</span></span> = <span class="vec"><span>−0.032</span><span>0.049</span><span>−0.018</span></span></div>
+          <div class="hb">
+            <div class="st"><span>Bot Rock</span><span class="sb"><i style="width:30.6%;background:var(--w)"></i><i style="width:35.6%;background:var(--t)"></i><i style="width:33.8%;background:var(--l)"></i></span><span>−0.032</span></div>
+            <div class="st pick"><span>Bot Paper</span><span class="sb"><i style="width:35.6%;background:var(--w)"></i><i style="width:33.8%;background:var(--t)"></i><i style="width:30.6%;background:var(--l)"></i></span><span>+0.049</span></div>
+            <div class="st"><span>Bot Scissors</span><span class="sb"><i style="width:33.8%;background:var(--w)"></i><i style="width:30.6%;background:var(--t)"></i><i style="width:35.6%;background:var(--l)"></i></span><span>−0.018</span></div>
+          </div>
+          <div class="key"><span><i style="background:var(--w)"></i>Bot wins</span><span><i style="background:var(--t)"></i>Tie</span><span><i style="background:var(--l)"></i>Bot loses</span></div>
+        </div>
+        <div class="col">
+          <div class="lab"><i>3</i>Choose<em>largest</em></div>
+          <div class="pick-card"><svg class="ic"><use href="#mP"/></svg><div><b>Paper</b><span>Scores +0.049, the largest entry</span></div></div>
+          <p class="sub tiny">Wins 0.356 · ties 0.338 · loses 0.306. Same move as countering your most likely throw, Rock.</p>
+          <p class="sub tiny">Ties break in the order R, P, S.</p>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 3 -->
+  <section class="draft" id="d3">
+    <h2><b>3</b>Portrait &amp; Ledger</h2>
+    <p class="why">The most formal one. The bot sits for its portrait in an arched frame, with a museum-style label; you appear as a small medallion beneath. The right side is a ledger set in a book serif: one row per step, the open row showing the score chart.</p>
+    <div class="stage"><div class="frame d3">
+      <div class="gal">
+        <div class="frm"><svg viewBox="0 0 200 200"><use href="#robot"/></svg></div>
+        <div class="vs"><div class="mini"><svg viewBox="0 0 200 200"><use href="#human"/></svg></div><div><b>You</b><span>Playing from the corner</span></div></div>
+        <div class="plate"><h3>The Bot</h3><p>Trained on 2 pooled studies. Plays the largest entry of A q.</p></div>
+      </div>
+      <div class="led">
+        <div class="hd"><h1>Round 2</h1><div class="sco"><b>You 0 · 1 Bot</b>Best of 3</div></div>
+        <p class="x">Last round ended in state <b>RL</b>: you played Rock and lost.</p>
+        <div class="row"><h4>Predict</h4><span class="f">q = P x, column RL</span><span class="v">[0.356, 0.338, 0.306]ᵀ</span></div>
+        <div class="row open"><h4>Score</h4><span class="f">A q, each bot move's expected points</span><span class="v"></span></div>
+        <div class="exp">
+          <div class="m"><span class="vec"><span>−0.032</span><span>0.049</span><span>−0.018</span></span></div>
+          <div>
+            <div class="st"><span>Rock</span><span class="sb"><i style="width:30.6%;background:var(--w)"></i><i style="width:35.6%;background:var(--t)"></i><i style="width:33.8%;background:var(--l)"></i></span><span>−0.032</span></div>
+            <div class="st pick"><span>Paper</span><span class="sb"><i style="width:35.6%;background:var(--w)"></i><i style="width:33.8%;background:var(--t)"></i><i style="width:30.6%;background:var(--l)"></i></span><span>+0.049</span></div>
+            <div class="st"><span>Scissors</span><span class="sb"><i style="width:33.8%;background:var(--w)"></i><i style="width:30.6%;background:var(--t)"></i><i style="width:35.6%;background:var(--l)"></i></span><span>−0.018</span></div>
+            <div class="key"><span><i style="background:var(--w)"></i>Bot wins</span><span><i style="background:var(--t)"></i>Tie</span><span><i style="background:var(--l)"></i>Bot loses</span></div>
+          </div>
+        </div>
+        <div class="row"><h4>Choose</h4><span class="f">Largest entry of A q</span><span class="v">Paper</span></div>
+        <div class="row"><h4>Payoff A</h4><span class="f">Rows: bot's move · columns: yours</span><span class="v"><span class="mat" style="font-size:20px;gap:0 12px"><span>0</span><span>−1</span><span>1</span><span>1</span><span>0</span><span>−1</span><span>−1</span><span>1</span><span>0</span></span></span></div>
+        <div class="foot"><a class="on" href="#">This round</a><a href="#">Long run</a><a href="#">Tally</a><a href="#">Policy</a><a href="#">Look ahead</a></div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 4 -->
+  <section class="draft" id="d4">
+    <h2><b>4</b>Across the Table</h2>
+    <p class="why">Closest to the current play mat, made calmer. The two players sit across a sage table with last round's cards face up between them. The three steps run below as one strip, left to right, ending on the bot's pick.</p>
+    <div class="stage"><div class="frame d4 ol">
+      <div class="scene">
+        <div class="tag h">You<small>Playing from the corner</small></div>
+        <div class="tag b">The Bot<small>Best of 3</small></div>
+        <div class="mid"><div class="s"><span>0</span>–<span>1</span></div><p>Round 2</p><span class="rr">Round 1: Paper beat Rock</span></div>
+        <div class="bust h"><svg><use href="#human"/></svg></div>
+        <div class="bust b"><svg><use href="#robot"/></svg></div>
+        <div class="tbl"></div>
+        <div class="crd h"><svg class="ic" style="color:var(--r)"><use href="#mR"/></svg>Rock</div>
+        <div class="crd b"><svg class="ic" style="color:var(--p)"><use href="#mP"/></svg>Paper</div>
+      </div>
+      <div class="strip">
+        <div class="sp">
+          <h4><i>1</i>Predict</h4>
+          <div class="eq">q = P x = <span class="vec"><span>0.356</span><span>0.338</span><span>0.306</span></span></div>
+          <div class="vb"><div>0.356<i style="height:88px;background:var(--r)"></i></div><div>0.338<i style="height:83px;background:var(--p)"></i></div><div>0.306<i style="height:75px;background:var(--s)"></i></div></div>
+          <div class="vl"><span>Rock</span><span>Paper</span><span>Scissors</span></div>
+        </div>
+        <div class="sp">
+          <h4><i>2</i>Score</h4>
+          <div class="eq">A q = <span class="vec"><span>−0.032</span><span>0.049</span><span>−0.018</span></span></div>
+          <div class="vb"><div>−0.032<i style="height:26px;background:var(--l)"></i></div><div>+0.049<i style="height:96px;background:var(--w)"></i></div><div>−0.018<i style="height:14px;background:var(--l)"></i></div></div>
+          <div class="vl"><span>Bot R</span><span>Bot P</span><span>Bot S</span></div>
+        </div>
+        <div class="sp">
+          <h4><i>3</i>Choose</h4>
+          <div class="ch"><svg class="ic"><use href="#mP"/></svg><div><b>Paper</b><span>Largest entry, +0.049. Same as countering Rock.</span></div></div>
+          <div class="ch" style="background:transparent;padding:10px 0 0;margin-top:0"><span>Payoff A: rows are the bot's move, columns yours.</span></div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+</main>
+<script>
+(function(){
+  var solo=location.hash.match(/^#solo-(d\d)$/);
+  if(solo){document.body.classList.add('solo');var s=document.getElementById(solo[1]);if(s)s.classList.add('on');return;}
+  function fit(){document.querySelectorAll('.stage').forEach(function(st){st.querySelector('.frame').style.transform='scale('+(st.clientWidth/1440)+')';});}
+  fit();addEventListener('resize',fit);
+})();
+</script>
+</body></html>

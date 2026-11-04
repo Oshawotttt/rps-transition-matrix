@@ -222,8 +222,9 @@ def test_bot_to_dict():
     bot = Bot(synthetic_counts())
     out = bot.to_dict()
 
-    assert set(out) == {"tokens", "moves", "alpha", "payoff", "outcome", "basic", "match", "opening", "decisions",
+    assert set(out) == {"opponent", "tokens", "moves", "alpha", "payoff", "outcome", "basic", "match", "opening", "decisions",
                         "policy", "look_ahead"}
+    assert out["opponent"] is None
     assert out["tokens"] == TOKENS and out["moves"] == MOVES and out["alpha"] == 1.0
     assert set(out["payoff"]) == {"A"} and out["payoff"]["A"] == [[0, -1, 1], [1, 0, -1], [-1, 1, 0]]
     assert set(out["outcome"]) == {"P"}
@@ -288,11 +289,15 @@ def test_cli_writes_json(tmp_path):
 
     result = run_bot_cli("--counts", path, "--out", out)
     assert result.returncode == 0, result.stderr
-    assert json.loads(out.read_text()) == json.loads(json.dumps(Bot(Counts.load(path)).to_dict()))
+    assert json.loads(out.read_text()) == json.loads(json.dumps(Bot(Counts.load(path), name="a").to_dict()))
 
     half = tmp_path / "half.json"
     assert run_bot_cli("--counts", path, "--out", half, "--alpha", "0.5").returncode == 0
     assert json.loads(half.read_text())["alpha"] == 0.5
+
+    named = tmp_path / "named.json"
+    assert run_bot_cli("--counts", path, "--out", named, "--name", "Alice").returncode == 0
+    assert json.loads(named.read_text())["opponent"] == "Alice"
 
     abbreviated = run_bot_cli("--count", path, "--out", tmp_path / "x.json")
     assert abbreviated.returncode != 0
@@ -331,4 +336,5 @@ def test_web_fixture_is_current():
 
 @pytest.mark.skipif(not COMBINED_COUNTS.exists(), reason=f"{COMBINED_COUNTS} is missing (data/ is gitignored)")
 def test_default_bot_is_current():
-    assert_json_close(json.loads(DEFAULT_BOT.read_text(encoding="utf-8")), exported(Bot(Counts.load(COMBINED_COUNTS))))
+    expected = exported(Bot(Counts.load(COMBINED_COUNTS), name="rps_human_combined"))
+    assert_json_close(json.loads(DEFAULT_BOT.read_text(encoding="utf-8")), expected)

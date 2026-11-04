@@ -103,7 +103,7 @@ All classes are in `src/rps_markov/markov.py`.
 
 ## Bot
 
-`Bot(counts: Counts, alpha: float = 1.0)` in `src/rps_markov/bot.py`. It takes a `Counts` and never loads. Building it computes nothing; the matrices and `opening` compute on first access and are cached.
+`Bot(counts: Counts, alpha: float = 1.0, name: str | None = None)` in `src/rps_markov/bot.py`. `name` is the opponent's display name, read back by the `name` property and exported as `opponent`. It takes a `Counts` and never loads. Building it computes nothing; the matrices and `opening` compute on first access and are cached.
 
 - The bot keeps no state between calls. None of its matrices change after it is built, so `get_move(s)` depends only on s. Matrices live on each instance, so several bots can exist side by side.
 - Read-only attributes (plain properties; they cannot be reassigned): `outcome` (`OutcomeTransitionMatrix`, 3 × 9), `basic` (`BasicTransitionMatrix`, 3 × 3), `payoff` (`PayoffMatrix`, A), `match` (`BotMatchTransitionMatrix`, 9 × 9, built from `outcome` and `payoff`). Callers read internals through them (e.g. `bot.match.eigenvalues`); the bot does not re-export matrix getters. There is no `policy` member: the 9-state policy is `get_move(s).move` for each s in `TOKENS`.
@@ -135,6 +135,7 @@ Top-level keys:
 
 | Key | Content |
 |---|---|
+| `opponent` | string, the bot's `name`; `null` when not given |
 | `tokens`, `moves` | `TOKENS`, `MOVES` |
 | `alpha` | float; read from `outcome.alpha`, the value the matrices were built with |
 | `payoff` | `{A}`: 3 × 3 ints, rows bot move, columns human move |
@@ -235,4 +236,4 @@ P, the 9 × 9 and A are never written to disk. Old `P_*.csv` and k = 3 `N_*.csv`
 
 For each input `<name>.csv` it writes `N_<name>.csv` to `--out`, creating the folder if needed. `<name>` is the input file name without its extension, so two inputs with the same name overwrite each other's outputs. There is no `--k`, no `--alpha` and no other flag; the parser has `allow_abbrev=False`, so only the exact flags `--csv` and `--out` are accepted.
 
-`python -m rps_markov.bot --counts <N file> --out <json file> [--alpha <float>]` writes the Bot JSON file for one `N_<name>.csv`, creating the parent folder of `--out` if needed. `--alpha` defaults to 1.0. No other flag; `allow_abbrev=False`, so only the exact flags are accepted. The file is compact UTF-8 JSON written with `allow_nan=False`, so a NaN or infinity fails the export instead of producing a file a browser's `JSON.parse` rejects.
+`python -m rps_markov.bot --counts <N file> --out <json file> [--alpha <float>] [--name <str>]` writes the Bot JSON file for one `N_<name>.csv`, creating the parent folder of `--out` if needed. `--alpha` defaults to 1.0. `--name` sets `opponent` in the JSON; it defaults to `<name>` from the counts file name (`N_` prefix removed). No other flag; `allow_abbrev=False`, so only the exact flags are accepted. The file is compact UTF-8 JSON written with `allow_nan=False`, so a NaN or infinity fails the export instead of producing a file a browser's `JSON.parse` rejects.

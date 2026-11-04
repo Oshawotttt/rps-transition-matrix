@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>The Rulebook</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#fdfdfb;--ink:#16161d;--r:#e0412f;--p:#2b6be0;--s:#f2b416;--rule:#0e8a6f;--alarm:#e0412f}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--paper);color:var(--ink);font-family:'Atkinson Hyperlegible',sans-serif;font-variant-numeric:tabular-nums}
+.mat{height:380px;background:var(--rule);position:relative;display:grid;grid-template-columns:1fr 360px 1fr;align-items:center;padding:0 80px;border-bottom:10px solid var(--ink)}
+.mat::after{content:"";position:absolute;inset:18px;border:3px dashed rgba(255,255,255,.45);border-radius:18px;pointer-events:none}
+.side{display:flex;align-items:center;gap:36px}
+.side.bot{justify-content:flex-end}
+.token{width:190px;height:190px;border-radius:50%;background:var(--paper);border:8px solid var(--ink);display:grid;place-items:center;position:relative}
+.face{font-size:92px;line-height:1}
+.brain{position:absolute;top:-34px;left:50%;transform:translateX(-50%);background:var(--s);border:5px solid var(--ink);border-radius:40px;padding:6px 20px;font:800 22px 'Bricolage Grotesque'}
+.name{font:800 34px 'Bricolage Grotesque';color:#fff;text-align:center;margin-top:14px}
+.card{width:118px;height:168px;border-radius:14px;border:6px solid var(--ink);background:repeating-linear-gradient(45deg,var(--ink) 0 8px,#2a2a36 8px 16px)}
+.card.wait{background:transparent;border-style:dashed;border-color:rgba(255,255,255,.7)}
+.status{font:700 24px 'Atkinson Hyperlegible';color:#fff;margin-top:10px;text-align:center}
+.center{text-align:center;color:#fff}
+.score{font:800 120px 'Bricolage Grotesque';line-height:1}
+.center small{display:block;font:700 26px 'Atkinson Hyperlegible';margin-top:8px}
+.book{display:grid;grid-template-columns:1fr 200px;height:510px}
+.page{padding:36px 80px}
+.head{display:flex;align-items:baseline;gap:24px;margin-bottom:22px}
+.head h1{font:800 54px 'Bricolage Grotesque'}
+.head span{font-size:28px}
+.step{display:grid;grid-template-columns:84px 1fr auto;align-items:center;border:5px solid var(--ink);border-radius:16px;margin-bottom:16px;height:104px;background:#fff}
+.num{height:100%;display:grid;place-items:center;font:800 54px 'Bricolage Grotesque';border-right:5px solid var(--ink)}
+.s1 .num{background:var(--p);color:#fff}.s2 .num{background:var(--s)}.s3 .num{background:var(--r);color:#fff}
+.step h2{font:800 38px 'Bricolage Grotesque';padding-left:28px}
+.step h2 i{font:400 32px 'Atkinson Hyperlegible';font-style:normal;margin-left:18px}
+.step b{font:700 28px 'Atkinson Hyperlegible';padding-right:30px}
+.tabs{display:flex;flex-direction:column;gap:12px;padding-top:36px}
+.tab{background:#fff;border:5px solid var(--ink);border-right:none;border-radius:16px 0 0 16px;padding:18px 20px;font:700 24px 'Atkinson Hyperlegible'}
+.tab.on{background:var(--ink);color:#fff}
+</style></head><body>
+<section class="mat">
+  <div class="side">
+    <div><div class="token"><span class="face">ᵔᴗᵔ</span></div><div class="name">You</div></div>
+    <div><div class="card"></div><div class="status">✓ chosen</div></div>
+  </div>
+  <div class="center"><div class="score">0 – 0</div><small>Best of 3 · Round 1</small></div>
+  <div class="side bot">
+    <div><div class="card"></div><div class="status">✓ chosen</div></div>
+    <div><div class="token"><span class="brain">brain ▾</span><span class="face">◕‿◕</span></div><div class="name">Bot</div></div>
+  </div>
+</section>
+<section class="book">
+  <div class="page">
+    <div class="head"><h1>The bot's turn</h1><span>x = π (round 1)</span></div>
+    <div class="step s1"><div class="num">1</div><h2>Predict <i>q = P x</i></h2><b>3 steps left ▸</b></div>
+    <div class="step s2"><div class="num">2</div><h2>Score <i>A q</i></h2><b>▸</b></div>
+    <div class="step s3"><div class="num">3</div><h2>Choose <i>largest entry of A q</i></h2><b>▸</b></div>
+  </div>
+  <nav class="tabs">
+    <div class="tab on">This round</div><div class="tab">Long run</div><div class="tab">Tally</div><div class="tab">Policy</div><div class="tab">Look ahead</div>
+  </nav>
+</section>
+</body></html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>The Cutaway</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--page:#fff;--ink:#1b2340;--call:#ff7a1a;--brain:#ff9fb2;--sky:#7cc4ff}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--page);color:var(--ink);font-family:'Atkinson Hyperlegible',sans-serif;font-variant-numeric:tabular-nums;position:relative}
+header{position:absolute;top:36px;left:60px;right:60px;display:flex;justify-content:space-between;align-items:baseline}
+header h1{font:800 46px 'Baloo 2'}
+header span{font:700 30px 'Atkinson Hyperlegible'}
+.human{position:absolute;left:80px;top:170px;text-align:center}
+.disc{width:220px;height:220px;border-radius:50%;background:var(--sky);border:7px solid var(--ink);display:grid;place-items:center;font-size:90px}
+.human p{font:800 34px 'Baloo 2';margin-top:12px}
+.human em{display:block;font:700 26px 'Atkinson Hyperlegible';font-style:normal;margin-top:6px}
+.robot{position:absolute;right:90px;top:140px;width:520px;height:700px}
+.head{position:absolute;left:60px;top:0;width:400px;height:330px;border:8px solid var(--ink);border-radius:60px 60px 40px 40px;background:#e8edf7;overflow:hidden}
+.lid{position:absolute;left:40px;top:-70px;width:440px;height:110px;border:8px solid var(--ink);border-radius:60px 60px 0 0;background:#e8edf7;transform:rotate(-14deg);transform-origin:left bottom}
+.part{position:absolute;width:104px;height:104px;border-radius:50%;border:6px solid var(--ink);display:grid;place-items:center;font:800 52px 'Baloo 2';background:var(--brain)}
+.p1{left:40px;top:60px}.p2{left:150px;top:150px;background:var(--call)}.p3{left:260px;top:60px;background:var(--sky)}
+.body{position:absolute;left:110px;top:350px;width:300px;height:260px;border:8px solid var(--ink);border-radius:40px;background:#e8edf7;display:grid;place-items:center;font-size:84px}
+.calls{position:absolute;left:380px;top:150px;width:470px}
+.callout{border:5px solid var(--ink);border-radius:18px;padding:22px 26px;margin-bottom:22px;display:flex;align-items:center;gap:20px;background:#fff;position:relative}
+.callout::after{content:"";position:absolute;right:-90px;top:50%;width:90px;border-top:5px solid var(--call)}
+.callout b{font:800 48px 'Baloo 2';width:66px;height:66px;border-radius:50%;background:var(--call);color:#fff;display:grid;place-items:center;flex:none}
+.callout h2{font:800 36px 'Baloo 2';line-height:1}
+.callout p{font-size:28px}
+footer{position:absolute;left:60px;bottom:36px;display:flex;gap:14px}
+footer span{border:4px solid var(--ink);border-radius:40px;padding:10px 22px;font:700 24px 'Atkinson Hyperlegible'}
+footer span:first-child{background:var(--ink);color:#fff}
+</style></head><body>
+<header><h1>How the bot thinks</h1><span>Best of 3 · Round 1 · You 0 – 0 Bot</span></header>
+<div class="human"><div class="disc">ᵔᴗᵔ</div><p>You</p><em>✓ chosen</em></div>
+<div class="calls">
+  <div class="callout"><b>1</b><div><h2>Predict</h2><p>q = P x</p></div></div>
+  <div class="callout"><b>2</b><div><h2>Score</h2><p>A q</p></div></div>
+  <div class="callout"><b>3</b><div><h2>Choose</h2><p>largest entry</p></div></div>
+</div>
+<div class="robot">
+  <div class="lid"></div>
+  <div class="head"><div class="part p1">1</div><div class="part p2">2</div><div class="part p3">3</div></div>
+  <div class="body">◕‿◕</div>
+</div>
+<footer><span>This round</span><span>Long run</span><span>Tally</span><span>Policy</span><span>Look ahead</span></footer>
+</body></html>

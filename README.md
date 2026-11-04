@@ -63,7 +63,7 @@ BasicTransitionMatrix(counts)     # 3 x 3
 python -m rps_markov.bot --counts data/processed/transition_matrices/N_rps_human_combined.csv --out data/processed/bots/bot_rps_human_combined.json
 ```
 
-Writes one static JSON file for the browser frontend (optional `--alpha`, default 1.0); the file's keys are in [Contracts](docs/CONTRACTS.md).
+Writes one static JSON file for the browser frontend (optional `--alpha`, default 1.0; optional `--name`, the opponent name stored as `opponent`, default `<name>` from `N_<name>.csv`); the file's keys are in [Contracts](docs/CONTRACTS.md).
 
 The default bot for the web app is committed at `web/public/bots/bot_rps_human_combined.json`. After rebuilding `data/`, rebuild it and copy it:
 
@@ -76,7 +76,20 @@ It can go stale when `data/` is rebuilt; `tests/test_bot.py::test_default_bot_is
 
 ## Game logic
 
-`web/src/game.js` loads a bot JSON and plays a best-of-3 or best-of-5 match in the browser. It is a plain ES module with no npm dependencies and no DOM code; the React UI will be added beside it later. API: [Contracts](docs/CONTRACTS.md), "Game logic".
+`web/src/game.js` loads a bot JSON and plays a best-of-3 or best-of-5 match in the browser. It is a plain ES module with no npm dependencies and no DOM code; the React UI beside it only calls it. API: [Contracts](docs/CONTRACTS.md), "Game logic".
+
+## Projector view
+
+A React app in `web/`, built with Vite. Run it from `web/`:
+
+```
+npm install
+npm run dev
+```
+
+`npm run build` writes the static app to `web/dist/`. The page loads the pooled bot by default; `?bot=bots/<file>.json` loads another bot from `web/public/bots/`.
+
+Each round the presenter goes through Predict, Score and Choose with the class, then clicks the bot's move. Only the move with the largest entry of A q is accepted. Until the relay server exists, the presenter then enters the friend's move on the projector.
 
 The test fixture `web/test/fixtures/bot_synthetic.json` is `Bot.to_dict()` of the synthetic counts in `tests/test_bot.py`. Regenerate it from the repo root:
 

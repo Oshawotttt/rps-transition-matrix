@@ -39,7 +39,8 @@ web/src/game.js: loadBot → validateBot → newGame → playRound (browser; the
 | `src/rps_markov/markov.py` | `Counts` (loads and holds N, read-only) and the transition matrices built from it: `TransitionMatrix` base, `OutcomeTransitionMatrix`, `SquareTransitionMatrix`, `BasicTransitionMatrix`, `BotMatchTransitionMatrix`. |
 | `src/rps_markov/payoff.py` | `PayoffMatrix`: the fixed 3 × 3 payoff A and the bot's best move. |
 | `src/rps_markov/bot.py` | `Bot` (holds the four matrices from one `Counts`; `get_move`, `opening`, `to_dict`), the `Decision` record, and the CLI that writes the bot JSON. All panel numbers are computed here and in `markov.py`; the frontend only reads them. |
-| `web/src/game.js` | Game logic in JavaScript (a plain ES module): loads and validates the bot JSON, plays a best-of-3 or best-of-5 match, keeps history, tally, running totals and the winner. The React UI will go beside it in `web/src/`, as one app with one `web/package.json`. Tests are in `web/test/`. |
+| `web/src/game.js` | Game logic in JavaScript (a plain ES module): loads and validates the bot JSON, plays a best-of-3 or best-of-5 match, keeps history, tally, running totals and the winner. Tests are in `web/test/`. |
+| `web/src/main.jsx`, `Projector.jsx`, `RoundReport.jsx`, `Panels.jsx`, `ui.jsx`, `projector.css` | The projector view, a React app built with Vite (one `web/package.json`). `main.jsx` loads the bot with `loadBot`; `Projector.jsx` keeps the `Game` in React state and holds the scene, tabs and round flow; `RoundReport.jsx` is the Predict, Score, Choose report; `Panels.jsx` holds Long run, Tally, Policy and Look ahead; `ui.jsx` holds notation, cards, characters and the fallback banner. |
 
 Signatures and file layouts are in [CONTRACTS.md](CONTRACTS.md); terms in [GLOSSARY.md](../GLOSSARY.md).
 
@@ -61,6 +62,7 @@ Signatures and file layouts are in [CONTRACTS.md](CONTRACTS.md); terms in [GLOSS
 - `web/src/game.js` has no DOM code and imports nothing from React; the UI only calls it. It needs no build step, so `node --test` runs it.
 - The frontend does no math beyond reading exported numbers, adding up per-round values and counting round wins: no matrix products, no eigenvalues, no re-deciding moves in JS.
 - Games are immutable: `playRound` returns a new frozen `Game`; the UI replaces its game each round.
+- The presenter can only play the recommended move (`decision.move`); a wrong pick is refused, so the chosen and recommended moves never differ.
 - Panels read match-wide numbers from `game.bot` and per-round numbers from `game.decision` and `game.history`. The live tally shows the chosen move and the recommended move only when they differ; otherwise it shows one.
 - Closed groups, group steady states, group outcome rates and transient states are for display only and never affect a move.
 - Round 1 follows `PRESENTATION-FLOW.md` 2.4 (π of the 9 × 9), not `OUTLINE.md`: the real round-1 move distribution u₀ is not used.
@@ -72,7 +74,8 @@ Signatures and file layouts are in [CONTRACTS.md](CONTRACTS.md); terms in [GLOSS
 - The only square matrices are `BasicTransitionMatrix` (3 × 3) and `BotMatchTransitionMatrix` (9 × 9). No k ≠ 1, no absorbing chains, no SVD or least-squares check. Matrix powers exist only as `look_ahead`.
 - No match win probability panel (neither the split 9 × 9 nor the absorbing chain).
 - No round-1 prediction from the real first-move distribution u₀.
-- No UI yet: the React app (build setup, buttons, panels, charts, banners, how the live tally is drawn) is built later in `web/`.
-- No HTTP server or API layer: the frontend reads a static JSON file.
+- No friend's device screen and no relay server yet: the presenter enters the friend's move on the projector.
+- No look-ahead panel yet: the tab is a placeholder.
+- No API layer: the frontend reads a static JSON file. The only server is the presenter laptop's local one on the room's wifi, which serves the app and relays moves between the two screens (the human's device and the projector).
 - No undo, save or replay of a game.
 - No collection of the friend's rounds, plots or presentation visuals.

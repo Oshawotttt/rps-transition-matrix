@@ -73,12 +73,18 @@ def _decide(payoff: PayoffMatrix, state: str | None, x: np.ndarray, q: np.ndarra
 class Bot:
     """The bot for one human's counts: fixed matrices, no memory between rounds; get_move(s) depends only on s."""
 
-    def __init__(self, counts: Counts, alpha: float = 1.0) -> None:
+    def __init__(self, counts: Counts, alpha: float = 1.0, name: str | None = None) -> None:
+        self._name = name
         # constructing the matrices computes no values; each computes on first access
         self._outcome = OutcomeTransitionMatrix(counts, alpha)
         self._basic = BasicTransitionMatrix(counts, alpha)
         self._payoff = PayoffMatrix()
         self._match = BotMatchTransitionMatrix(self._outcome, self._payoff)
+
+    @property
+    def name(self) -> str | None:
+        """The opponent's display name, or None when not given."""
+        return self._name
 
     @property
     def outcome(self) -> OutcomeTransitionMatrix:
@@ -127,6 +133,7 @@ class Bot:
             rows = match.look_ahead(np.eye(len(TOKENS))[j])
             look_ahead[s] = {"rows": _floats(rows), "stopped_at": len(rows) - 1}
         return {
+            "opponent": self.name,
             "tokens": TOKENS,
             "moves": MOVES,
             "alpha": float(self.outcome.alpha),
@@ -153,9 +160,11 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--counts", required=True, type=Path, help="an N_<name>.csv from python -m rps_markov.count")
     parser.add_argument("--out", required=True, type=Path, help="output JSON file")
     parser.add_argument("--alpha", type=float, default=1.0, help="smoothing (default 1.0)")
+    parser.add_argument("--name", help="opponent name in the JSON (default <name> from N_<name>.csv)")
     args = parser.parse_args(argv)
+    name = args.name if args.name is not None else args.counts.stem.removeprefix("N_")
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    bot = Bot(Counts.load(args.counts), args.alpha)
+    bot = Bot(Counts.load(args.counts), args.alpha, name)
     args.out.write_text(json.dumps(bot.to_dict(), allow_nan=False), encoding="utf-8")
 
 
