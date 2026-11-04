@@ -240,16 +240,21 @@ Every matrix is a list of rows. Every eigenvalue list is a list of `[re, im]` pa
   - `match.stationary`, `outcome_rates`, `edge` and `edge_check` are `null` when π is not unique; `eigenvalue_one_multiplicity`, `closed_groups`, `group_stationary` and `group_outcome_rates` give the banner and the per-group rates from PRESENTATION-FLOW 2.4. Doc delta.
   - The CLI has flags `--counts`, `--out` and optional `--alpha` (default 1.0) only, with `allow_abbrev=False`, like `python -m rps_markov.count` (`docs: CONTRACTS.md`, CLI). It creates the parent folder of `--out` if needed. Doc delta.
 - **Acceptance criteria:**
-  - [ ] `Decision.to_dict()` has keys `state, x, q, scores, move, source, counter_move, splits, expected_score`, all JSON-safe, and `json.dumps` succeeds. `tests/test_bot.py::test_decision_to_dict`
-  - [ ] `Bot.to_dict()` has exactly the top-level keys in the **Interfaces** JSON table, with the nested keys listed there; `decisions[s] == get_move(s).to_dict()` for all 9 s; `policy.S` equals `payoff.A @ outcome.P`; each `policy.B` column is one-hot at `decisions[s].move`; `look_ahead[s].rows` equals `match.look_ahead(one-hot s)` and `stopped_at == len(rows) − 1`. `tests/test_bot.py::test_bot_to_dict`
-  - [ ] `json.dumps(Bot(counts).to_dict())` succeeds and `json.loads` of it round-trips the eigenvalues as `[re, im]` pairs equal to `match.eigenvalues`. `tests/test_bot.py::test_bot_to_dict_json_safe`
-  - [ ] For the reducible counts, `to_dict()` succeeds with `match.stationary`, `outcome_rates`, `edge`, `edge_check` and `rounds_to_fade` `null`, `eigenvalue_one_multiplicity == 2`, 2 entries in `group_outcome_rates`, and `opening.source == "basic"`. `tests/test_bot.py::test_bot_to_dict_reducible`
-  - [ ] The CLI on a `tmp_path` N file writes JSON equal to `Bot(Counts.load(path)).to_dict()`; an abbreviated flag (`--count`) exits with an error. `tests/test_bot.py::test_cli_writes_json`
-  - [ ] Full suite passes: `python -m pytest`.
+  - [x] `Decision.to_dict()` has keys `state, x, q, scores, move, source, counter_move, splits, expected_score`, all JSON-safe, and `json.dumps` succeeds. `tests/test_bot.py::test_decision_to_dict`
+  - [x] `Bot.to_dict()` has exactly the top-level keys in the **Interfaces** JSON table, with the nested keys listed there; `decisions[s] == get_move(s).to_dict()` for all 9 s; `policy.S` equals `payoff.A @ outcome.P`; each `policy.B` column is one-hot at `decisions[s].move`; `look_ahead[s].rows` equals `match.look_ahead(one-hot s)` and `stopped_at == len(rows) − 1`. `tests/test_bot.py::test_bot_to_dict`
+  - [x] `json.dumps(Bot(counts).to_dict())` succeeds and `json.loads` of it round-trips the eigenvalues as `[re, im]` pairs equal to `match.eigenvalues`. `tests/test_bot.py::test_bot_to_dict_json_safe`
+  - [x] For the reducible counts, `to_dict()` succeeds with `match.stationary`, `outcome_rates`, `edge`, `edge_check` and `rounds_to_fade` `null`, `eigenvalue_one_multiplicity == 2`, 2 entries in `group_outcome_rates`, and `opening.source == "basic"`. `tests/test_bot.py::test_bot_to_dict_reducible`
+  - [x] The CLI on a `tmp_path` N file writes JSON equal to `Bot(Counts.load(path)).to_dict()`; an abbreviated flag (`--count`) exits with an error. `tests/test_bot.py::test_cli_writes_json`
+  - [x] Full suite passes: `python -m pytest`.
 - **Doc deltas:**
   - `docs/CONTRACTS.md`: "Bot JSON file" section with the key table from **Interfaces** (as a table, no code); the CLI.
   - `docs/ARCHITECTURE.md`: data-flow line `N_<name>.csv → python -m rps_markov.bot → bot JSON → browser frontend`; rule "The frontend reads the bot only through the JSON export; everything in it is fixed before the game."; "Not included": the frontend, game rules and score keeping, an HTTP server, running totals over the game.
   - `README.md`: the export command.
+  - Decisions made during implementation:
+    - The fields that need a unique π are written as `null` by testing `eigenvalue_one_multiplicity == 1`, not by catching `ValueError`, so no other error is hidden. The same rule makes `basic.stationary` `null` if the 3 × 3 π is ever not unique. `docs/CONTRACTS.md` Bot JSON file.
+    - The CLI writes compact UTF-8 JSON with `allow_nan=False`, so a NaN or infinity fails the export instead of producing a file a browser's `JSON.parse` rejects. `docs/CONTRACTS.md` CLI.
+    - `alpha` in the file is read from `outcome.alpha`, the value the matrices were built with. Needs no doc.
+    - `tests/test_bot.py::test_cli_writes_json` also checks that `--alpha 0.5` reaches the file. Needs no doc.
 
 ## Human checks
 

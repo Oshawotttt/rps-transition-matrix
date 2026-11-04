@@ -1,3 +1,8 @@
+import json
+import os
+import subprocess
+import sys
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -6,7 +11,7 @@ from rps_markov.bot import Bot, Decision
 from rps_markov.count import MOVES, TOKENS, count
 from rps_markov.markov import BasicTransitionMatrix, BotMatchTransitionMatrix, Counts, OutcomeTransitionMatrix
 from rps_markov.payoff import PayoffMatrix
-from test_count import synthetic_rounds
+from test_count import SRC, synthetic_rounds
 from test_markov import cycling_counts, reducible_counts
 
 # the move that beats each move
@@ -178,3 +183,116 @@ def test_opening_cached():
     bot = Bot(synthetic_counts())
 
     assert bot.opening is bot.opening
+
+
+DECISION_KEYS = {"state", "x", "q", "scores", "move", "source", "counter_move", "splits", "expected_score"}
+CHAIN_KEYS = {"P", "eigenvalues", "moduli", "eigenvalue_one_multiplicity", "has_unit_cycle", "rounds_to_fade",
+              "stationary", "closed_groups", "transient_states"}
+MATCH_KEYS = CHAIN_KEYS | {"outcome_rates", "edge", "edge_check", "group_stationary", "group_outcome_rates"}
+
+
+def assert_json_safe(value):
+    """Only dicts with str keys, lists, str, int, float, bool and None; no numpy types."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            assert isinstance(key, str)
+            assert_json_safe(item)
+    elif isinstance(value, list):
+        for item in value:
+            assert_json_safe(item)
+    else:
+        assert value is None or type(value) in (str, int, float, bool), type(value)
+
+
+def test_decision_to_dict():
+    d = Bot(synthetic_counts()).get_move("SL")
+    out = d.to_dict()
+
+    assert set(out) == DECISION_KEYS
+    assert_json_safe(out)
+    json.dumps(out, allow_nan=False)
+    assert out["state"] == "SL" and out["move"] == d.move and out["source"] == "state"
+    assert out["q"] == d.q.tolist()
+    assert out["splits"] == d.splits.tolist() and len(out["splits"]) == 3
+    assert out["expected_score"] == d.expected_score
+    assert Bot(synthetic_counts()).opening.to_dict()["state"] is None
+
+
+def test_bot_to_dict():
+    bot = Bot(synthetic_counts())
+    out = bot.to_dict()
+
+    assert set(out) == {"tokens", "moves", "alpha", "payoff", "outcome", "basic", "match", "opening", "decisions",
+                        "policy", "look_ahead"}
+    assert out["tokens"] == TOKENS and out["moves"] == MOVES and out["alpha"] == 1.0
+    assert set(out["payoff"]) == {"A"} and out["payoff"]["A"] == [[0, -1, 1], [1, 0, -1], [-1, 1, 0]]
+    assert set(out["outcome"]) == {"P"}
+    assert set(out["basic"]) == CHAIN_KEYS
+    assert set(out["match"]) == MATCH_KEYS
+    assert out["basic"]["rounds_to_fade"] == bot.basic.rounds_to_fade(0.1)
+    assert out["match"]["edge"] == bot.match.edge
+    assert out["opening"] == bot.opening.to_dict()
+    assert set(out["decisions"]) == set(TOKENS)
+    for s in TOKENS:
+        assert out["decisions"][s] == bot.get_move(s).to_dict()
+    assert set(out["policy"]) == {"S", "B"}
+    np.testing.assert_allclose(out["policy"]["S"], bot.payoff.A @ bot.outcome.P, rtol=0, atol=1e-12)
+    B = np.array(out["policy"]["B"])
+    assert B.shape == (3, 9)
+    for j, s in enumerate(TOKENS):
+        np.testing.assert_array_equal(B[:, j], [m == out["decisions"][s]["move"] for m in MOVES])
+    assert set(out["look_ahead"]) == set(TOKENS)
+    for j, s in enumerate(TOKENS):
+        x = np.zeros(9)
+        x[j] = 1
+        entry = out["look_ahead"][s]
+        assert set(entry) == {"rows", "stopped_at"}
+        np.testing.assert_array_equal(entry["rows"], bot.match.look_ahead(x))
+        assert entry["stopped_at"] == len(entry["rows"]) - 1
+
+
+def test_bot_to_dict_json_safe():
+    bot = Bot(synthetic_counts())
+    out = bot.to_dict()
+    assert_json_safe(out)
+    loaded = json.loads(json.dumps(out, allow_nan=False))
+
+    for key in ["basic", "match"]:
+        eigenvalues = getattr(bot, key).eigenvalues
+        assert all(len(pair) == 2 for pair in loaded[key]["eigenvalues"])
+        np.testing.assert_array_equal([complex(re, im) for re, im in loaded[key]["eigenvalues"]], eigenvalues)
+
+
+def test_bot_to_dict_reducible():
+    out = Bot(reducible_counts()).to_dict()
+    match = out["match"]
+
+    json.dumps(out, allow_nan=False)
+    for key in ["stationary", "outcome_rates", "edge", "edge_check", "rounds_to_fade"]:
+        assert match[key] is None, key
+    assert match["eigenvalue_one_multiplicity"] == 2
+    assert len(match["group_outcome_rates"]) == 2
+    assert out["opening"]["source"] == "basic"
+
+
+def run_bot_cli(*args):
+    env = {**os.environ, "PYTHONPATH": str(SRC)}
+    return subprocess.run([sys.executable, "-m", "rps_markov.bot", *map(str, args)],
+                          env=env, capture_output=True, text=True)
+
+
+def test_cli_writes_json(tmp_path):
+    path = tmp_path / "N_a.csv"
+    count(synthetic_rounds(seed=7)).to_csv(path)
+    out = tmp_path / "bots" / "bot_a.json"
+
+    result = run_bot_cli("--counts", path, "--out", out)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(out.read_text()) == json.loads(json.dumps(Bot(Counts.load(path)).to_dict()))
+
+    half = tmp_path / "half.json"
+    assert run_bot_cli("--counts", path, "--out", half, "--alpha", "0.5").returncode == 0
+    assert json.loads(half.read_text())["alpha"] == 0.5
+
+    abbreviated = run_bot_cli("--count", path, "--out", tmp_path / "x.json")
+    assert abbreviated.returncode != 0
