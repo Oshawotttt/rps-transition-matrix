@@ -8,7 +8,7 @@
 
 **Commands:**
 
-- Full test suite: `python -m pytest` and `node --test web/test/`
+- Full test suite: `python -m pytest` and `node --test "web/test/*.test.js"`
 - Single test file: `python -m pytest tests/test_bot.py`; `node --test web/test/game.test.js`
 - Typecheck: none
 - Lint: none
@@ -121,20 +121,25 @@ No split: S2 tests S1's module against Python's export.
   - The UI is React (user: "use react and frozen games"). So games are immutable: `playRound` returns a new `Game` and never changes the one passed in, and the returned game and its history entries are frozen with `Object.freeze`. The UI keeps the game in React state and replaces it each round, e.g. `setGame(playRound(game, humanMove, botMove))`. The bot JSON is not frozen. Doc delta (CONTRACTS, Game logic; ARCHITECTURE rules).
   - `game.js` itself imports nothing from React; it stays a plain ES module with no dependencies, so `node --test` runs it without a build step. Doc delta (ARCHITECTURE rules).
 - **Acceptance criteria:**
-  - [ ] For all 9 (botMove, humanMove) pairs on a hand-built bot, `outcomeOf` gives `botScore` equal to the PRESENTATION-FLOW 2.4 A table, the human-side outcome, and the token (e.g. bot P, human R → `botScore` 1, `"lose"`, `"RL"`). `web/test/game.test.js` "outcomeOf covers all pairs"
-  - [ ] `outcomeOf` and `playRound` with a move not in `bot.moves` throw. `web/test/game.test.js` "unknown move throws"
-  - [ ] `newGame(bot, 3)` has `bestOf` 3, `target` 2, `round` 1, `state` null, `decision` equal to `bot.opening`, empty `history`, tally all 0, `winner` null, both totals 0; `newGame(bot, 5)` has `target` 3; `newGame(bot, 4)` throws. `web/test/game.test.js` "newGame"
-  - [ ] After `playRound(newGame(bot, 3), "R", "P")`, `state` is the token of round 1, `decision` is `bot.decisions[state]`, `round` is 2, and the history has one `Round` with every field per the Interfaces table. `web/test/game.test.js` "playRound uses the token for the next decision"
-  - [ ] `playRound` with `botMove` equal to `decision.move` records `recommended` true and `expectedScore` equal to `recommendedExpectedScore`; with another move it records `recommended` false, uses `botMove` for `botScore` and `token`, and `expectedScore` = `decision.scores[i(botMove)]`. `web/test/game.test.js` "chosen move versus recommended move"
-  - [ ] Over a scripted game, `tally`, `expectedTotal` and `actualTotal` equal the sums over the history, and each entry's totals are the running sums up to it. `web/test/game.test.js` "totals are running sums"
-  - [ ] In best of 3, ties leave `winner` null; `winner` becomes `"bot"` on the bot's 2nd round win and `"human"` on the human's 2nd; in best of 5, on the 3rd. `playRound` on a game with a winner throws. `web/test/game.test.js` "match ends at target"
-  - [ ] `playRound` leaves the game passed in unchanged, and the returned game and its history entries are frozen. `web/test/game.test.js` "playRound is immutable"
-  - [ ] A bot whose `moves` are in a different order than R, P, S is rejected by `validateBot`; for each check in the Interfaces list, a bot missing or breaking it throws an `Error` naming that key. `web/test/game.test.js` "validateBot rejects bad shapes"
-  - [ ] `loadBot` with a stub `fetchFn` returns the validated data; a stub with `ok: false` throws an `Error` containing the status; `loadBot(undefined, stub)` fetches `DEFAULT_BOT_URL`. `web/test/game.test.js` "loadBot"
+  - [x] For all 9 (botMove, humanMove) pairs on a hand-built bot, `outcomeOf` gives `botScore` equal to the PRESENTATION-FLOW 2.4 A table, the human-side outcome, and the token (e.g. bot P, human R → `botScore` 1, `"lose"`, `"RL"`). `web/test/game.test.js` "outcomeOf covers all pairs"
+  - [x] `outcomeOf` and `playRound` with a move not in `bot.moves` throw. `web/test/game.test.js` "unknown move throws"
+  - [x] `newGame(bot, 3)` has `bestOf` 3, `target` 2, `round` 1, `state` null, `decision` equal to `bot.opening`, empty `history`, tally all 0, `winner` null, both totals 0; `newGame(bot, 5)` has `target` 3; `newGame(bot, 4)` throws. `web/test/game.test.js` "newGame"
+  - [x] After `playRound(newGame(bot, 3), "R", "P")`, `state` is the token of round 1, `decision` is `bot.decisions[state]`, `round` is 2, and the history has one `Round` with every field per the Interfaces table. `web/test/game.test.js` "playRound uses the token for the next decision"
+  - [x] `playRound` with `botMove` equal to `decision.move` records `recommended` true and `expectedScore` equal to `recommendedExpectedScore`; with another move it records `recommended` false, uses `botMove` for `botScore` and `token`, and `expectedScore` = `decision.scores[i(botMove)]`. `web/test/game.test.js` "chosen move versus recommended move"
+  - [x] Over a scripted game, `tally`, `expectedTotal` and `actualTotal` equal the sums over the history, and each entry's totals are the running sums up to it. `web/test/game.test.js` "totals are running sums"
+  - [x] In best of 3, ties leave `winner` null; `winner` becomes `"bot"` on the bot's 2nd round win and `"human"` on the human's 2nd; in best of 5, on the 3rd. `playRound` on a game with a winner throws. `web/test/game.test.js` "match ends at target"
+  - [x] `playRound` leaves the game passed in unchanged, and the returned game and its history entries are frozen. `web/test/game.test.js` "playRound is immutable"
+  - [x] A bot whose `moves` are in a different order than R, P, S is rejected by `validateBot`; for each check in the Interfaces list, a bot missing or breaking it throws an `Error` naming that key. `web/test/game.test.js` "validateBot rejects bad shapes"
+  - [x] `loadBot` with a stub `fetchFn` returns the validated data; a stub with `ok: false` throws an `Error` containing the status; `loadBot(undefined, stub)` fetches `DEFAULT_BOT_URL`. `web/test/game.test.js` "loadBot"
 - **Doc deltas:**
   - `docs/CONTRACTS.md`: new "Game logic" section with the Interfaces tables above and the rules from Decisions.
   - `docs/ARCHITECTURE.md`: data flow ends in `web/src/game.js`; module table row for `web/src/game.js`; rules: no DOM code in it, no math beyond reading, summing and counting round wins, the live tally shows both moves only when they differ; "Not included": the UI (for now), undo/save/replay; remove the "No frontend … outside this repo" and "No running totals" bullets.
   - `README.md`: a "Game logic" section with the test command.
+  - Decisions made during implementation:
+    - The JS test command is `node --test "web/test/*.test.js"` (and `web/package.json`'s `test` script is `node --test "test/*.test.js"`), not `node --test web/test/`: Node 24 takes file globs and fails with `MODULE_NOT_FOUND` on a directory. Spec Commands updated. Doc delta (README: test command).
+    - `validateBot` errors read `bad bot JSON: <key>`, with dotted keys (`payoff.A`, `opening.move`, `decisions.PL.scores`); a missing parent is reported as the parent (`opening`, `decisions.ST`). Numbers must be finite. Doc delta (CONTRACTS, Game logic).
+    - Besides the `Game` and its `Round` entries, the `history` array and the `tally` object are frozen too, so a frozen game cannot be changed through them. Doc delta (CONTRACTS, Game logic).
+    - `playRound` checks `winner` first, then the moves; an unknown move throws `Error("unknown move: <move>")` from `outcomeOf`. Doc delta: none needed beyond the Interfaces table (both are `Error`).
   - `GLOSSARY.md`: **Match** (best of 3 or 5: first to 2 or 3 round wins, ties don't count); **Game** (one human's match against one loaded bot: history, tally, totals, winner); **Round record** (one played round: decision, chosen and recommended moves, outcome, token, scores); **Live tally** (the per-round record shown during the game; it shows the chosen and the recommended move only when they differ).
 
 ### S2: Default bot, fixture from the Python export and cross-language check
@@ -155,7 +160,7 @@ No split: S2 tests S1's module against Python's export.
   - [ ] `tests/test_bot.py::test_web_fixture_is_current`: the fixture equals `Bot(synthetic_counts()).to_dict()` (strings and ints exactly, floats within 1e-12). `python -m pytest tests/test_bot.py`
   - [ ] `tests/test_bot.py::test_default_bot_is_current`: the default bot equals `Bot(Counts.load(N_rps_human_combined.csv)).to_dict()` (same tolerance); skipped when that N file is missing. `python -m pytest tests/test_bot.py`
 - **Doc deltas:**
-  - `README.md`: the command that regenerates the fixture; the commands that rebuild the default bot and copy it to `web/public/bots/`; that `node --test web/test/` is part of the test suite.
+  - `README.md`: the command that regenerates the fixture; the commands that rebuild the default bot and copy it to `web/public/bots/`; that `node --test "web/test/*.test.js"` is part of the test suite.
   - `docs/ARCHITECTURE.md`: data flow and the "`data/` is gitignored" paragraph name `web/public/bots/bot_rps_human_combined.json` as the committed default bot.
 
 ## Human checks
