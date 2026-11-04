@@ -296,3 +296,39 @@ def test_cli_writes_json(tmp_path):
 
     abbreviated = run_bot_cli("--count", path, "--out", tmp_path / "x.json")
     assert abbreviated.returncode != 0
+
+
+ROOT = SRC.parent
+WEB_FIXTURE = ROOT / "web" / "test" / "fixtures" / "bot_synthetic.json"
+DEFAULT_BOT = ROOT / "web" / "public" / "bots" / "bot_rps_human_combined.json"
+COMBINED_COUNTS = ROOT / "data" / "processed" / "transition_matrices" / "N_rps_human_combined.csv"
+
+
+def assert_json_close(actual, expected, path="$"):
+    """Strings, ints, bools and None exactly; floats within 1e-12 (np.linalg.eig can differ in the last bits)."""
+    if isinstance(expected, dict):
+        assert isinstance(actual, dict) and set(actual) == set(expected), path
+        for key in expected:
+            assert_json_close(actual[key], expected[key], f"{path}.{key}")
+    elif isinstance(expected, list):
+        assert isinstance(actual, list) and len(actual) == len(expected), path
+        for k, (a, e) in enumerate(zip(actual, expected)):
+            assert_json_close(a, e, f"{path}[{k}]")
+    elif type(expected) is float:
+        assert type(actual) is float and abs(actual - expected) <= 1e-12, (path, actual, expected)
+    else:
+        assert type(actual) is type(expected) and actual == expected, (path, actual, expected)
+
+
+def exported(bot):
+    """bot.to_dict() as the browser reads it, after the JSON round trip the CLI writes."""
+    return json.loads(json.dumps(bot.to_dict(), allow_nan=False))
+
+
+def test_web_fixture_is_current():
+    assert_json_close(json.loads(WEB_FIXTURE.read_text(encoding="utf-8")), exported(Bot(synthetic_counts())))
+
+
+@pytest.mark.skipif(not COMBINED_COUNTS.exists(), reason=f"{COMBINED_COUNTS} is missing (data/ is gitignored)")
+def test_default_bot_is_current():
+    assert_json_close(json.loads(DEFAULT_BOT.read_text(encoding="utf-8")), exported(Bot(Counts.load(COMBINED_COUNTS))))

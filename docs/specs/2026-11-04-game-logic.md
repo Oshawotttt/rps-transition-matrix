@@ -154,13 +154,19 @@ No split: S2 tests S1's module against Python's export.
   - The fixture is `Bot(Counts(count(synthetic_rounds(seed=7)))).to_dict()`, the counts `tests/test_bot.py` already uses, written as JSON (`code: tests/test_bot.py`). `data/` is gitignored, so the fixture lives under `web/test/fixtures/` (`docs: ARCHITECTURE.md`). Doc delta (README: how to regenerate it).
   - Fixture floats are compared within 1e-12, since `np.linalg.eig` output can differ in the last bits across machines. `transient`
 - **Acceptance criteria:**
-  - [ ] `web/public/bots/bot_rps_human_combined.json` is byte-identical to `data/processed/bots/bot_rps_human_combined.json` at the time of the copy, and `git check-ignore web/public/bots/bot_rps_human_combined.json` exits 1 (not ignored). Command: `cmp` of the two files, then `git check-ignore`.
-  - [ ] `validateBot` accepts both the fixture and the default bot. `web/test/game.fixture.test.js` "fixture and default bot are valid"
-  - [ ] For both files, for every token t and every human move, playing a round with the recommended move from a game whose last token is t gives `decision` = `decisions[next token]`, and the 3 next tokens from state t (one per human move) are exactly the 3 nonzero rows of column t of the 9 × 9 export (`match.P`). `web/test/game.fixture.test.js` "tokens match the 9 x 9 chain"
-  - [ ] `tests/test_bot.py::test_web_fixture_is_current`: the fixture equals `Bot(synthetic_counts()).to_dict()` (strings and ints exactly, floats within 1e-12). `python -m pytest tests/test_bot.py`
-  - [ ] `tests/test_bot.py::test_default_bot_is_current`: the default bot equals `Bot(Counts.load(N_rps_human_combined.csv)).to_dict()` (same tolerance); skipped when that N file is missing. `python -m pytest tests/test_bot.py`
+  - [x] `web/public/bots/bot_rps_human_combined.json` is byte-identical to `data/processed/bots/bot_rps_human_combined.json` at the time of the copy, and `git check-ignore web/public/bots/bot_rps_human_combined.json` exits 1 (not ignored). Command: `cmp` of the two files, then `git check-ignore`.
+  - [x] `validateBot` accepts both the fixture and the default bot. `web/test/game.fixture.test.js` "fixture and default bot are valid"
+  - [x] For both files, for every token t and every human move, playing a round with the recommended move from a game whose last token is t gives `decision` = `decisions[next token]`, and the 3 next tokens from state t (one per human move) are exactly the 3 nonzero rows of column t of the 9 × 9 export (`match.P`). `web/test/game.fixture.test.js` "tokens match the 9 x 9 chain"
+  - [x] `tests/test_bot.py::test_web_fixture_is_current`: the fixture equals `Bot(synthetic_counts()).to_dict()` (strings and ints exactly, floats within 1e-12). `python -m pytest tests/test_bot.py`
+  - [x] `tests/test_bot.py::test_default_bot_is_current`: the default bot equals `Bot(Counts.load(N_rps_human_combined.csv)).to_dict()` (same tolerance); skipped when that N file is missing. `python -m pytest tests/test_bot.py`
 - **Doc deltas:**
   - `README.md`: the command that regenerates the fixture; the commands that rebuild the default bot and copy it to `web/public/bots/`; that `node --test "web/test/*.test.js"` is part of the test suite.
+  - Decisions made during implementation:
+    - The fixture is regenerated from the repo root with `python -c "import json, sys; sys.path.insert(0, 'tests'); from test_bot import synthetic_counts; from rps_markov.bot import Bot; open('web/test/fixtures/bot_synthetic.json', 'w', encoding='utf-8').write(json.dumps(Bot(synthetic_counts()).to_dict(), allow_nan=False))"`, the same `json.dumps(..., allow_nan=False)` the bot CLI writes. Doc delta (README).
+    - The default bot is rebuilt with `python -m rps_markov.bot --counts data/processed/transition_matrices/N_rps_human_combined.csv --out data/processed/bots/bot_rps_human_combined.json`, then copied with `cp data/processed/bots/bot_rps_human_combined.json web/public/bots/`. Doc delta (README).
+    - Both pytest checks compare the file with `Bot.to_dict()` after a `json.dumps`/`json.loads` round trip, recursively: same keys and list lengths, and types must match (an int never equals a float), with floats within 1e-12. Doc delta: none (test code).
+    - The JS fixture tests read both files with `node:fs`, not `loadBot`, since `loadBot` fetches a URL relative to the page; validation still goes through `validateBot`. Doc delta: none (test code).
+    - The game API has no way to start in a given state, so "tokens match the 9 x 9 chain" first plays round 1 with a bot move that gives the human token t. Doc delta: none (test code).
   - `docs/ARCHITECTURE.md`: data flow and the "`data/` is gitignored" paragraph name `web/public/bots/bot_rps_human_combined.json` as the committed default bot.
 
 ## Human checks
