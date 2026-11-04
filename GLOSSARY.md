@@ -27,3 +27,11 @@
 **Payoff matrix (A)**: the fixed 3 × 3 matrix of the bot's score (+1 win, 0 tie, −1 loss); rows are bot moves, columns are human moves.
 
 **Human-vs-bot chain**: the 9 × 9 column-stochastic matrix over tokens for one human playing the best-move bot.
+
+**Decision**: one bot choice with its working (x, q, A q, move) and the per-round panel numbers.
+
+**Opening**: the bot's round-1 decision, from q₀ = P π of the human-vs-bot chain, or the 3 × 3 steady state when that π is not unique or the chain cycles.
+
+**Closed group**: a group of states the chain never leaves once in it; each has its own steady state.
+
+**Transient state**: a state in no closed group; the long run never returns to it.

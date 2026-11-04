@@ -55,6 +55,16 @@ BasicTransitionMatrix(counts)     # 3 x 3
 - `PayoffMatrix`: the fixed 3 × 3 payoff A, which picks the bot's best move against a predicted distribution.
 - `BotMatchTransitionMatrix(OutcomeTransitionMatrix(counts), PayoffMatrix())`: the 9 × 9 chain of one human against the best-move bot; `outcome_rates` gives the long-run win, lose and tie rates from the human's side.
 
+- `Bot(counts)`: holds the four matrices as read-only attributes `outcome`, `basic`, `match`, `payoff`; `get_move(token)` gives the decision after the human's previous token, `opening` the round-1 decision, and `to_dict()` everything the frontend shows.
+
+## Export for the frontend
+
+```
+python -m rps_markov.bot --counts data/processed/transition_matrices/N_rps_human_combined.csv --out data/processed/bots/bot_rps_human_combined.json
+```
+
+Writes one static JSON file for the browser frontend (optional `--alpha`, default 1.0); the file's keys are in [Contracts](docs/CONTRACTS.md).
+
 ## Tests
 
 ```

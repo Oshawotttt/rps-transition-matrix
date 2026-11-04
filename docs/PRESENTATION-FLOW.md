@@ -104,7 +104,7 @@ Be honest about one limit: round 1 is the start of the game, not the long run. T
 - Fall back to the 3 × 3 matrix's steady state for q₀. Smoothing makes every entry of the 3 × 3 matrix positive, so its λ = 1 appears once (Perron–Frobenius).
 - Optionally, list each group's states and the win rate within each group.
 
-A related edge case: an eigenvalue other than 1 with |λ| = 1, such as −1. Then π is still unique, but the chain cycles and Mᵗ u₀ never settles. π is still the long-run share of each state averaged over rounds. The code does not check for this case. Show a note if it happens.
+A related edge case: an eigenvalue other than 1 with |λ| = 1, such as −1. Then π is still unique, but the chain cycles and Mᵗ u₀ never settles. π is still the long-run share of each state averaged over rounds. The code checks for this case (`has_unit_cycle`), and the bot then falls back to the 3 × 3 steady state for round 1, like the repeated-eigenvalue case. Show a note if it happens.
 
 **Each round after that: look up, score, choose.**
 
