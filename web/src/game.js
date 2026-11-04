@@ -40,6 +40,8 @@ function checkDecision(decision, key, moves) {
 // Returns data unchanged if it has the shape the game reads; otherwise throws an Error naming the first bad key.
 export function validateBot(data) {
   check(isObject(data), "(root)");
+  // the name from the CLI's --name, or null when it was not given
+  check(typeof data.opponent === "string" || data.opponent === null, "opponent");
   check(sameList(data.moves, MOVES), "moves");
   check(sameList(data.tokens, TOKENS), "tokens");
   const A = data.payoff?.A;

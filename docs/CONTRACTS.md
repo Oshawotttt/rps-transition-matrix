@@ -167,6 +167,7 @@ Top-level keys:
 `validateBot` checks (errors read `bad bot JSON: <key>`, with dotted keys such as `payoff.A`, `opening.move`, `decisions.PL.scores`; a missing parent is reported as the parent, e.g. `opening`, `decisions.ST`):
 
 - the data is a JSON object, not an array and not `null` (key `(root)`);
+- `opponent` is a string or `null`; a missing key fails;
 - `moves` equals `["R","P","S"]`; `tokens` equals `["RW","RL","RT","PW","PL","PT","SW","SL","ST"]`;
 - `payoff.A` is 3 × 3 and every entry is +1, 0 or −1 (the values `outcomeOf` maps to an outcome);
 - `opening` and every `decisions[t]` for t in `tokens` are objects (not arrays), have `move` in `moves`, and `scores` and `q` each hold 3 finite numbers; `expected_score` is a finite number. `decisions` itself is an object.
@@ -236,4 +237,4 @@ P, the 9 × 9 and A are never written to disk. Old `P_*.csv` and k = 3 `N_*.csv`
 
 For each input `<name>.csv` it writes `N_<name>.csv` to `--out`, creating the folder if needed. `<name>` is the input file name without its extension, so two inputs with the same name overwrite each other's outputs. There is no `--k`, no `--alpha` and no other flag; the parser has `allow_abbrev=False`, so only the exact flags `--csv` and `--out` are accepted.
 
-`python -m rps_markov.bot --counts <N file> --out <json file> [--alpha <float>] [--name <str>]` writes the Bot JSON file for one `N_<name>.csv`, creating the parent folder of `--out` if needed. `--alpha` defaults to 1.0. `--name` sets `opponent` in the JSON; it defaults to `<name>` from the counts file name (`N_` prefix removed). No other flag; `allow_abbrev=False`, so only the exact flags are accepted. The file is compact UTF-8 JSON written with `allow_nan=False`, so a NaN or infinity fails the export instead of producing a file a browser's `JSON.parse` rejects.
+`python -m rps_markov.bot --counts <N file> --out <json file> [--alpha <float>] [--name <str>]` writes the Bot JSON file for one `N_<name>.csv`, creating the parent folder of `--out` if needed. `--alpha` defaults to 1.0. `--name` sets `opponent` in the JSON; without it `opponent` is `null`. No other flag; `allow_abbrev=False`, so only the exact flags are accepted. The file is compact UTF-8 JSON written with `allow_nan=False`, so a NaN or infinity fails the export instead of producing a file a browser's `JSON.parse` rejects.

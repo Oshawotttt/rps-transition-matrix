@@ -289,7 +289,7 @@ def test_cli_writes_json(tmp_path):
 
     result = run_bot_cli("--counts", path, "--out", out)
     assert result.returncode == 0, result.stderr
-    assert json.loads(out.read_text()) == json.loads(json.dumps(Bot(Counts.load(path), name="a").to_dict()))
+    assert json.loads(out.read_text()) == json.loads(json.dumps(Bot(Counts.load(path)).to_dict()))
 
     half = tmp_path / "half.json"
     assert run_bot_cli("--counts", path, "--out", half, "--alpha", "0.5").returncode == 0

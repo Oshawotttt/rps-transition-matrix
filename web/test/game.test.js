@@ -20,6 +20,7 @@ function handBot() {
     decisions[t] = decision(t, MOVES[j % 3], scores);
   });
   return {
+    opponent: "Alice",
     tokens: [...TOKENS],
     moves: [...MOVES],
     payoff: { A: [[0, -1, 1], [1, 0, -1], [-1, 1, 0]] },
@@ -185,9 +186,13 @@ test("playRound is immutable", () => {
 test("validateBot rejects bad shapes", () => {
   const good = handBot();
   assert.equal(validateBot(good), good);
+  const unnamed = { ...handBot(), opponent: null };
+  assert.equal(validateBot(unnamed), unnamed);
 
   // [the key the message must name, how to break the bot]
   const cases = [
+    ["opponent", (b) => { delete b.opponent; }],
+    ["opponent", (b) => { b.opponent = 7; }],
     ["moves", (b) => { b.moves = ["P", "R", "S"]; }],
     ["moves", (b) => { delete b.moves; }],
     ["tokens", (b) => { b.tokens = [...TOKENS].reverse(); }],
@@ -234,6 +239,7 @@ test("loadBot", async () => {
   };
 
   assert.deepEqual(await loadBot("bots/a.json", stub(bot)), bot);
+  assert.equal((await loadBot("bots/a.json", stub(bot))).opponent, "Alice");
   assert.equal(calls.at(-1), "bots/a.json");
 
   await assert.rejects(loadBot("bots/missing.json", stub(null, { ok: false, status: 404 })),

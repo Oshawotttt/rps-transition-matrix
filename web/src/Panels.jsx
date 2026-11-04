@@ -18,6 +18,27 @@ function eigenLabel([re, im]) {
   return `${fix(re)} ${im < 0 ? "−" : "+"} ${fix(Math.abs(im))}i`;
 }
 
+// M in square brackets with "from" states across the top and "to" states down the side, in one grid so labels line up.
+function Grid9({ rows, tokens }) {
+  return (
+    <div className="m9" role="table" aria-label="The 9 by 9 matrix M, columns are the state now, rows the state next">
+      <span className="m9-from">from</span>
+      <span className="m9-to">to</span>
+      <span className="m9-brk" aria-hidden="true" />
+      {tokens.map((t, j) => <span key={t} className="m9-col" role="columnheader" style={{ gridColumn: j + 4 }}>{t}</span>)}
+      {rows.map((row, i) => (
+        <div className="m9-row" role="row" key={tokens[i]}>
+          <span className="m9-lbl" role="rowheader" style={{ gridRow: i + 3 }}>{tokens[i]}</span>
+          {row.map((v, j) => (
+            <span key={j} role="cell" style={{ gridRow: i + 3, gridColumn: j + 4 }}
+              className={v === 0 ? "z" : `nz ${OUTCOME_COLOUR[tokens[i][1]]}`}>{v === 0 ? "0" : fix(v)}</span>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function LongRun({ bot }) {
   const { match, tokens } = bot;
   const k = match.eigenvalue_one_multiplicity;
@@ -26,9 +47,19 @@ export function LongRun({ bot }) {
   const top = pi ? Math.max(...pi) : 1;
   return (
     <>
-      <div className="lede"><h1>The long run</h1><p>The 9 × 9 matrix M for your friend against this bot</p></div>
+      <div className="lede"><h1>The long run</h1><p>The 9 × 9 matrix M for {bot.opponent ?? "your friend"} against this bot</p></div>
       <p className="intro">Round 1 has no previous state, so we start from the steady state π of M. These numbers are fixed before the match.</p>
       <Fallback bot={bot} />
+      <div className="sec">
+        <h2>The 9 × 9 matrix M</h2>
+        <p className="cap" style={{ marginBottom: 18 }}>
+          Column s is where the match goes after state s. Only 3 entries per column are nonzero, one for each move they can throw next, shaded by how that round ends for them. Each column sums to 1.
+        </p>
+        <Grid9 rows={match.P} tokens={tokens} />
+        <div className="key" style={{ marginTop: 14 }}>
+          <span><i style={{ background: "var(--w)" }} />They win (…W)</span><span><i style={{ background: "var(--t)" }} />Tie (…T)</span><span><i style={{ background: "var(--l)" }} />They lose (…L)</span>
+        </div>
+      </div>
       <div className="sec">
         <h2>Eigenvalues of M, sorted by |λ|</h2>
         <p className="cap" style={{ marginBottom: 14 }}>
@@ -72,17 +103,6 @@ export function LongRun({ bot }) {
           )}
         </div>
       )}
-      <div className="sec">
-        <h2>M, 3 nonzero entries per column</h2>
-        <table className="grid9">
-          <thead><tr><th />{tokens.map((t) => <th key={t}>{t}</th>)}</tr></thead>
-          <tbody>
-            {match.P.map((row, i) => (
-              <tr key={tokens[i]}><th>{tokens[i]}</th>{row.map((v, j) => <td key={j} className={v === 0 ? "z" : undefined}>{v === 0 ? "0" : fix(v)}</td>)}</tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </>
   );
 }

@@ -160,11 +160,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--counts", required=True, type=Path, help="an N_<name>.csv from python -m rps_markov.count")
     parser.add_argument("--out", required=True, type=Path, help="output JSON file")
     parser.add_argument("--alpha", type=float, default=1.0, help="smoothing (default 1.0)")
-    parser.add_argument("--name", help="opponent name in the JSON (default <name> from N_<name>.csv)")
+    parser.add_argument("--name", help="opponent name written to the JSON as opponent (default: null)")
     args = parser.parse_args(argv)
-    name = args.name if args.name is not None else args.counts.stem.removeprefix("N_")
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    bot = Bot(Counts.load(args.counts), args.alpha, name)
+    bot = Bot(Counts.load(args.counts), args.alpha, args.name)
     args.out.write_text(json.dumps(bot.to_dict(), allow_nan=False), encoding="utf-8")
 
 

@@ -60,15 +60,15 @@ BasicTransitionMatrix(counts)     # 3 x 3
 ## Export for the frontend
 
 ```
-python -m rps_markov.bot --counts data/processed/transition_matrices/N_rps_human_combined.csv --out data/processed/bots/bot_rps_human_combined.json
+python -m rps_markov.bot --counts data/processed/transition_matrices/N_rps_human_combined.csv --out data/processed/bots/bot_rps_human_combined.json --name rps_human_combined
 ```
 
-Writes one static JSON file for the browser frontend (optional `--alpha`, default 1.0; optional `--name`, the opponent name stored as `opponent`, default `<name>` from `N_<name>.csv`); the file's keys are in [Contracts](docs/CONTRACTS.md).
+Writes one static JSON file for the browser frontend (optional `--alpha`, default 1.0; optional `--name`, the opponent name stored as `opponent`, `null` when omitted); the file's keys are in [Contracts](docs/CONTRACTS.md).
 
 The default bot for the web app is committed at `web/public/bots/bot_rps_human_combined.json`. After rebuilding `data/`, rebuild it and copy it:
 
 ```
-python -m rps_markov.bot --counts data/processed/transition_matrices/N_rps_human_combined.csv --out data/processed/bots/bot_rps_human_combined.json
+python -m rps_markov.bot --counts data/processed/transition_matrices/N_rps_human_combined.csv --out data/processed/bots/bot_rps_human_combined.json --name rps_human_combined
 cp data/processed/bots/bot_rps_human_combined.json web/public/bots/
 ```
 

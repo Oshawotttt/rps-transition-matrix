@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { newGame, playRound } from "./game.js";
 import RoundReport from "./RoundReport.jsx";
 import { LongRun, LookAhead, Policy, Tally } from "./Panels.jsx";
 import { Card, Sprites } from "./ui.jsx";
+import WinScreen from "./WinScreen.jsx";
 
 const TABS = [["round", "This round"], ["long", "Long run"], ["tally", "Tally"], ["policy", "Policy"], ["ahead", "Look ahead"]];
 
@@ -14,6 +15,9 @@ export default function Projector({ bot }) {
   const [pick, setPick] = useState(null);
   const [wrong, setWrong] = useState(null);
   const [tab, setTab] = useState("round");
+  // the win screen opens a moment after the final reveal, so the last cards register first
+  const [won, setWon] = useState(false);
+  const name = bot.opponent ?? "Your friend";
 
   const record = phase === "result" ? game.history[game.history.length - 1] : null;
   // while a result shows, the report keeps the round just played; the game has already moved on
@@ -29,7 +33,17 @@ export default function Projector({ bot }) {
     setPhase("think");
     setPick(null);
     setWrong(null);
+    setWon(false);
+    setTab("round");
   }
+
+  useEffect(() => {
+    if (!game.winner) return undefined;
+    const timer = setTimeout(() => setWon(true), 1400);
+    return () => clearTimeout(timer);
+  }, [game.winner]);
+
+  const onMain = useCallback(() => setWon(false), []);
 
   function onPick(move) {
     if (move !== game.decision.move) {
@@ -47,7 +61,7 @@ export default function Projector({ bot }) {
   }
 
   function onNext() {
-    if (game.winner) restart();
+    if (game.winner) setWon(true);
     else {
       setPhase("think");
       setPick(null);
@@ -60,10 +74,10 @@ export default function Projector({ bot }) {
       <Sprites />
       <header className="scene"><div className="in">
         <div className="tag bot">The Bot<small>That's us</small></div>
-        <div className="tag hum">Your friend<small>Playing from the corner</small></div>
+        <div className="tag hum">{name}<small>Playing from the corner</small></div>
         <div className="mid">
           <div className="score">
-            <span>{botWins}<small>Bot</small></span><span className="dash">–</span><span>{friendWins}<small>Friend</small></span>
+            <span>{botWins}<small>Bot</small></span><span className="dash">–</span><span>{friendWins}<small>{name}</small></span>
           </div>
           <p>Best of {game.bestOf} · first to {game.target} · Round {view.round}</p>
         </div>
@@ -92,7 +106,7 @@ export default function Projector({ bot }) {
           <button key={id} className="tab" role="tab" id={`tab-${id}`} aria-controls={`p-${id}`} aria-selected={tab === id} onClick={() => setTab(id)}>{label}</button>
         ))}
         <div className="mini">
-          <span>Bot <b>{botWins}</b> – <b>{friendWins}</b> Friend</span>
+          <span>Bot <b>{botWins}</b> – <b>{friendWins}</b> <span className="who">{name}</span></span>
           <div className="len" role="group" aria-label="Match length">
             {[3, 5].map((n) => (
               <button key={n} aria-pressed={game.bestOf === n} disabled={game.history.length > 0} onClick={() => restart(n)}>Best of {n}</button>
@@ -106,7 +120,7 @@ export default function Projector({ bot }) {
         <section className="panel" id={`p-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
           {tab === "round" && (
             <RoundReport bot={bot} {...view} phase={phase} pick={pick} wrong={wrong} onPick={onPick} onFriend={onFriend}
-              record={record} winner={game.winner} target={game.target} tally={game.tally} onNext={onNext} />
+              record={record} winner={game.winner} target={game.target} tally={game.tally} onNext={onNext} name={name} />
           )}
           {tab === "long" && <LongRun bot={bot} />}
           {tab === "tally" && <Tally bot={bot} history={game.history} />}
@@ -114,6 +128,11 @@ export default function Projector({ bot }) {
           {tab === "ahead" && <LookAhead />}
         </section>
       </main>
+
+      {won && (
+        <WinScreen winner={game.winner} name={name} tally={game.tally} bestOf={game.bestOf} rounds={game.history.length}
+          onMain={onMain} onPlay={(n) => { restart(n); window.scrollTo(0, 0); }} />
+      )}
     </>
   );
 }

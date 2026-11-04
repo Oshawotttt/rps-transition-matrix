@@ -89,22 +89,22 @@ function Score({ bot, decision }) {
   );
 }
 
-function Result({ record, winner, target, tally, onNext }) {
+function Result({ record, winner, tally, onNext, name }) {
   const { botMove, humanMove, outcome, token, round } = record;
   const title = outcome === "tie" ? "Tie. Replay the round" : outcome === "lose" ? `We win round ${round}` : `They win round ${round}`;
   let end = "";
   if (winner === "bot") end = ` We win the match ${tally.lose}–${tally.win}.`;
-  if (winner === "human") end = ` They win the match ${tally.win}–${tally.lose}.`;
+  if (winner === "human") end = ` ${name} wins the match ${tally.win}–${tally.lose}.`;
   return (
     <div className="result" aria-live="polite">
       <div className="pair"><Card move={botMove} side="b" won={outcome === "lose"} /><Card move={humanMove} side="h" won={outcome === "win"} /></div>
       <div><h3>{title}</h3><p>We played {NAME[botMove]}, they played {NAME[humanMove]}. New state: {token}.{end}</p></div>
-      <button className="next" onClick={onNext}>{winner ? "New match" : "Next round"}</button>
+      <button className="next" onClick={onNext}>{winner ? "See the podium" : "Next round"}</button>
     </div>
   );
 }
 
-function Choose({ bot, decision, phase, pick, wrong, onPick, onFriend, record, winner, target, tally, onNext }) {
+function Choose({ bot, decision, phase, pick, wrong, onPick, onFriend, record, winner, tally, onNext, name }) {
   const { moves } = bot;
   const chosen = phase !== "think";
   return (
@@ -128,13 +128,13 @@ function Choose({ bot, decision, phase, pick, wrong, onPick, onFriend, record, w
       )}
       {phase === "reveal" && (
         <div className="friend">
-          <h3>What did your friend throw?</h3>
+          <h3>What did {bot.opponent ?? "your friend"} throw?</h3>
           <div className="opts">
             {moves.map((m) => <button key={m} className="mv sm" onClick={() => onFriend(m)}><MoveIcon move={m} />{NAME[m]}</button>)}
           </div>
         </div>
       )}
-      {phase === "result" && <Result record={record} winner={winner} target={target} tally={tally} onNext={onNext} />}
+      {phase === "result" && <Result record={record} winner={winner} tally={tally} onNext={onNext} name={name} />}
     </Step>
   );
 }
