@@ -43,6 +43,7 @@ test("tokens match the 9 x 9 chain", () => {
         return token;
       });
       const nonzero = bot.tokens.filter((_, i) => bot.match.P[i][j] !== 0);
+      assert.equal(nonzero.length, 3, `${name} column ${t} nonzero entries`);
       assert.deepEqual([...next].sort(), [...nonzero].sort(), `${name} column ${t}`);
     }
   }
