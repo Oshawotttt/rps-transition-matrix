@@ -148,6 +148,75 @@ Top-level keys:
 
 `stationary`, `outcome_rates`, `edge` and `edge_check` are `null` when π is not unique, tested by `eigenvalue_one_multiplicity == 1` rather than by catching `ValueError`, so no other error is hidden (the same rule makes `basic.stationary` `null` if the 3 × 3 π is ever not unique). `rounds_to_fade` is `null` when modulus(λ₂) ≥ 1 − 1e-9. `eigenvalue_one_multiplicity`, `closed_groups`, `group_stationary` and `group_outcome_rates` give the banner and the per-group rates (PRESENTATION-FLOW 2.4).
 
+## Game logic
+
+`web/src/game.js`, a plain ES module with no dependencies, no DOM code and no React import. It loads a Bot JSON file (see above) and plays one match of best of 3 or best of 5. The frontend always chooses the bot's move and passes it in; `botMove` is a required argument of `playRound`, with no default.
+
+| Export | Signature | Meaning |
+|---|---|---|
+| `validateBot` | `(data: object) => object` | returns `data` unchanged if it has the shape below; otherwise throws `Error` whose message is `bad bot JSON: <key>`, naming the first bad key |
+| `DEFAULT_BOT_URL` | `string` | `"bots/bot_rps_human_combined.json"`, relative to the page; Vite serves it from `web/public/bots/`. The default bot is the one built from all human rounds |
+| `loadBot` | `(url: string = DEFAULT_BOT_URL, fetchFn = fetch) => Promise<object>` | fetches `url`, parses JSON, returns `validateBot(data)`; a non-OK response throws `Error` with the status |
+| `outcomeOf` | `(bot, botMove: string, humanMove: string) => {botScore, outcome, token}` | `botScore` = `bot.payoff.A[i(botMove)][i(humanMove)]`; `outcome` from the human's side: `botScore` +1 → `"lose"`, 0 → `"tie"`, −1 → `"win"`; `token` = `humanMove` + `W`/`L`/`T` for that outcome. A move not in `bot.moves` throws `Error("unknown move: <move>")` |
+| `newGame` | `(bot, bestOf: 3 \| 5) => Game` | round 1, `decision` = `bot.opening`, empty history, zero totals; any other `bestOf` throws `Error` |
+| `playRound` | `(game, humanMove: string, botMove: string) => Game` | plays one round with the move the frontend chose for the bot; returns a new `Game`. Checks `winner` first, then the moves: throws `Error` if `game.winner` is not `null`, or if either move is not in `bot.moves` |
+
+`i(move)` is the index of `move` in `bot.moves`, never a hardcoded order.
+
+`validateBot` checks (errors read `bad bot JSON: <key>`, with dotted keys such as `payoff.A`, `opening.move`, `decisions.PL.scores`; a missing parent is reported as the parent, e.g. `opening`, `decisions.ST`):
+
+- the data is a JSON object, not an array and not `null` (key `(root)`);
+- `moves` equals `["R","P","S"]`; `tokens` equals `["RW","RL","RT","PW","PL","PT","SW","SL","ST"]`;
+- `payoff.A` is 3 × 3 and every entry is +1, 0 or −1 (the values `outcomeOf` maps to an outcome);
+- `opening` and every `decisions[t]` for t in `tokens` are objects (not arrays), have `move` in `moves`, and `scores` and `q` each hold 3 finite numbers; `expected_score` is a finite number. `decisions` itself is an object.
+
+Other keys are not checked.
+
+Rules:
+
+- Round 1 plays `bot.opening`; every later round plays `bot.decisions[token]` for the human's previous token. The token is from the human's side and is built from the move actually played for the bot, not the recommended one.
+- The round outcome comes from the exported A, `A[bot, human]`: +1 bot wins, 0 tie, −1 human wins.
+- The match ends when `tally.win` or `tally.lose` reaches `target`. Ties are replayed: they count as rounds but not towards `target`. No round can be played once `winner` is set.
+- A round's expected score is the score of the move played, `decision.scores[i(botMove)]`. The actual score is bot round wins minus human round wins.
+- One bot per game: `newGame` takes one loaded bot JSON, and each game holds its own state, so two games (e.g. friend and pooled) can exist side by side.
+- Games are immutable: `playRound` never changes the game passed in. The returned `Game`, its `history` array, its `tally` object and the `Round` entries are frozen with `Object.freeze`. The bot JSON is not frozen. The UI keeps the game in React state and replaces it each round, e.g. `setGame(playRound(game, humanMove, botMove))`.
+- Panels read numbers fixed for the match (9 × 9, eigenvalues, π, outcome rates, edge, policy, banner flags, A) straight from `game.bot`; the game logic adds no wrapper over the Bot JSON. Per-round numbers come from `game.decision` and `game.history`. `Game.state` lets the look-ahead panel pick `bot.look_ahead[state]`.
+
+`Game` (plain object, frozen):
+
+| Field | Type | Meaning |
+|---|---|---|
+| `bot` | object | the loaded bot JSON |
+| `bestOf` | 3 or 5 | the match length chosen at the start |
+| `target` | 2 or 3 | round wins needed to take the match: (`bestOf` + 1) / 2 |
+| `round` | int | the number of the next round to play, starting at 1; ties count as rounds |
+| `state` | `null` or string | the human's last token (the state for the next round); `null` before round 1 is played |
+| `decision` | object | the bot's decision for the next round: `bot.opening` when `state` is `null`, else `bot.decisions[state]` |
+| `history` | array of `Round` | rounds played, oldest first |
+| `tally` | `{win, lose, tie}` ints | rounds by outcome, from the human's side |
+| `winner` | `null`, `"human"` or `"bot"` | `"human"` once `tally.win` reaches `target`, `"bot"` once `tally.lose` reaches `target`; `null` before |
+| `expectedTotal` | number | sum of each round's `expectedScore` |
+| `actualTotal` | int | sum of each round's `botScore` (bot round wins minus human round wins) |
+
+`Round` (one history entry, frozen):
+
+| Field | Type | Meaning |
+|---|---|---|
+| `round` | int | round number |
+| `decision` | object | the decision the bot had for this round |
+| `botMove` | string | the move the frontend chose for the bot |
+| `recommendedMove` | string | `decision.move` |
+| `recommended` | bool | `botMove === recommendedMove` |
+| `humanMove` | string | the human's move |
+| `botScore` | int | from `outcomeOf` with `botMove` |
+| `outcome` | string | from `outcomeOf` with `botMove` |
+| `token` | string | from `outcomeOf` with `botMove`; the state for the next round |
+| `expectedScore` | number | `decision.scores[i(botMove)]` |
+| `recommendedExpectedScore` | number | `decision.expected_score` |
+| `expectedTotal`, `actualTotal` | number | the running totals after this round |
+
+Code: `web/src/game.js`.
+
 ## Matrix files
 
 Only counts are persisted: `N_<name>.csv`.

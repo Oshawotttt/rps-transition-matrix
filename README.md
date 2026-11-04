@@ -65,11 +65,35 @@ python -m rps_markov.bot --counts data/processed/transition_matrices/N_rps_human
 
 Writes one static JSON file for the browser frontend (optional `--alpha`, default 1.0); the file's keys are in [Contracts](docs/CONTRACTS.md).
 
+The default bot for the web app is committed at `web/public/bots/bot_rps_human_combined.json`. After rebuilding `data/`, rebuild it and copy it:
+
+```
+python -m rps_markov.bot --counts data/processed/transition_matrices/N_rps_human_combined.csv --out data/processed/bots/bot_rps_human_combined.json
+cp data/processed/bots/bot_rps_human_combined.json web/public/bots/
+```
+
+It can go stale when `data/` is rebuilt; `tests/test_bot.py::test_default_bot_is_current` fails then (skipped when the N file is missing).
+
+## Game logic
+
+`web/src/game.js` loads a bot JSON and plays a best-of-3 or best-of-5 match in the browser. It is a plain ES module with no npm dependencies and no DOM code; the React UI will be added beside it later. API: [Contracts](docs/CONTRACTS.md), "Game logic".
+
+The test fixture `web/test/fixtures/bot_synthetic.json` is `Bot.to_dict()` of the synthetic counts in `tests/test_bot.py`. Regenerate it from the repo root:
+
+```
+python -c "import json, sys; sys.path.insert(0, 'tests'); from test_bot import synthetic_counts; from rps_markov.bot import Bot; open('web/test/fixtures/bot_synthetic.json', 'w', encoding='utf-8').write(json.dumps(Bot(synthetic_counts()).to_dict(), allow_nan=False))"
+```
+
+`tests/test_bot.py::test_web_fixture_is_current` fails if it no longer matches Python.
+
 ## Tests
 
 ```
 python -m pytest
+node --test "web/test/*.test.js"
 ```
+
+The JS command takes a file glob (Node 24 fails with `MODULE_NOT_FOUND` on a directory such as `web/test/`). `web/package.json`'s `test` script runs the same tests from `web/`.
 
 ## Docs
 

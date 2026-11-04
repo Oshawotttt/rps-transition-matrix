@@ -32,6 +32,14 @@
 
 **Opening**: the bot's round-1 decision, from q₀ = P π of the human-vs-bot chain, or the 3 × 3 steady state when that π is not unique or the chain cycles.
 
+**Match**: best of 3 or best of 5; the first to 2 or 3 round wins takes it, and ties don't count.
+
+**Game**: one human's match against one loaded bot: history, tally, running totals and winner.
+
+**Round record**: one played round: the bot's decision, the chosen and recommended moves, outcome, token and scores.
+
+**Live tally**: the per-round record shown during the game; it shows the chosen and the recommended move only when they differ.
+
 **Closed group**: a group of states the chain never leaves once in it; each has its own steady state.
 
 **Transient state**: a state in no closed group; the long run never returns to it.
