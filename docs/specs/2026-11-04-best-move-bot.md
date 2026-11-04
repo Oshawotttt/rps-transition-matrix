@@ -172,16 +172,19 @@ Every matrix is a list of rows. Every eigenvalue list is a list of `[re, im]` pa
   - The 3 × 3 fallback is also used when the 9 × 9 has an eigenvalue other than 1 with modulus 1 (`match.has_unit_cycle`): then π is unique but the chain cycles and never settles, so it is not used for round 1 (user: "the code checks it. it needs it to make the decision on whether to use steady state for round 1 or not"). Smoothing makes every entry of the 3 × 3 positive, so the 3 × 3 has neither problem. `source` is `"basic"` in both fallback cases; the frontend tells them apart by `match.eigenvalue_one_multiplicity` and `match.has_unit_cycle`. Doc delta.
   - The opening follows `docs/PRESENTATION-FLOW.md` 2.4, not `docs/OUTLINE.md`: u₀ (the real round-1 move distribution) is not used (user approved). Doc delta.
 - **Acceptance criteria:**
-  - [ ] For `Counts(count(synthetic_rounds(seed=7)))` (unique π): `opening.state is None`, `opening.x == match.stationary`, `opening.q == outcome.P @ match.stationary` and equals π summed over each move's 3 tokens, `opening.scores == payoff.scores(q)`, `opening.move == payoff.best_move(q)`, `opening.source == "match"`. `tests/test_bot.py::test_opening_from_match_steady_state`
-  - [ ] For the reducible counts built in `tests/test_markov.py::test_stationary_rejects_reducible_chain` (S after RT/PW/SL, P after RW/PL/ST, 10 each; eigenvalue 1 repeated): `opening.source == "basic"`, `opening.x == opening.q == basic.stationary`, `opening.move == payoff.best_move(basic.stationary)`, and no exception escapes. `tests/test_bot.py::test_opening_falls_back_to_basic`
-  - [ ] For the cycling counts (P after RW/RL/RT, R after PW/PL/PT/SW/SL/ST, 10 each, alpha 1e-12; the 9 × 9 has eigenvalues 1 and −1, π unique on RL and PL): `match.has_unit_cycle is True`, `match.eigenvalue_one_multiplicity == 1`, `opening.source == "basic"`, `opening.q == basic.stationary`. `tests/test_bot.py::test_opening_falls_back_on_unit_cycle`
-  - [ ] `opening` is cached: the same object on repeat access. `tests/test_bot.py::test_opening_cached`
-  - [ ] Full suite passes: `python -m pytest`.
+  - [x] For `Counts(count(synthetic_rounds(seed=7)))` (unique π): `opening.state is None`, `opening.x == match.stationary`, `opening.q == outcome.P @ match.stationary` and equals π summed over each move's 3 tokens, `opening.scores == payoff.scores(q)`, `opening.move == payoff.best_move(q)`, `opening.source == "match"`. `tests/test_bot.py::test_opening_from_match_steady_state`
+  - [x] For the reducible counts built in `tests/test_markov.py::test_stationary_rejects_reducible_chain` (S after RT/PW/SL, P after RW/PL/ST, 10 each; eigenvalue 1 repeated): `opening.source == "basic"`, `opening.x == opening.q == basic.stationary`, `opening.move == payoff.best_move(basic.stationary)`, and no exception escapes. `tests/test_bot.py::test_opening_falls_back_to_basic`
+  - [x] For the cycling counts (P after RW/RL/RT, R after PW/PL/PT/SW/SL/ST, 10 each, alpha 1e-12; the 9 × 9 has eigenvalues 1 and −1, π unique on RL and PL): `match.has_unit_cycle is True`, `match.eigenvalue_one_multiplicity == 1`, `opening.source == "basic"`, `opening.q == basic.stationary`. `tests/test_bot.py::test_opening_falls_back_on_unit_cycle`
+  - [x] `opening` is cached: the same object on repeat access. `tests/test_bot.py::test_opening_cached`
+  - [x] Full suite passes: `python -m pytest`.
 - **Doc deltas:**
   - `docs/CONTRACTS.md`, Bot section: `opening`, its two sources and the two fallback conditions.
   - `docs/ARCHITECTURE.md`: "Not included" drops "round-1 fallback" and lists round-1 prediction from u₀.
   - `GLOSSARY.md`: **Opening**: the bot's round-1 decision, from q₀ = P π of the human-vs-bot chain, or the 3 × 3 steady state when that π is not unique or the chain cycles.
   - `docs/PRESENTATION-FLOW.md` 2.4: the paragraph on an eigenvalue other than 1 with modulus 1 says the bot then falls back to the 3 × 3 steady state for round 1, like the repeated-eigenvalue case.
+  - Decisions made during implementation:
+    - `opening` tests `match.eigenvalue_one_multiplicity > 1` and `match.has_unit_cycle` before reading `match.stationary`, instead of catching its `ValueError`, so the fallback rule reads the same two members the frontend uses to explain it. `docs/CONTRACTS.md` Bot section, `opening`.
+    - `tests/test_bot.py` imports the reducible and cycling counts from `tests/test_markov.py` (`reducible_counts`, `cycling_counts`), so both test files use the same chains. Needs no doc.
 
 ### S3: Chain diagnostics and look-ahead on square transition matrices
 

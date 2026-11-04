@@ -7,6 +7,7 @@ from rps_markov.count import MOVES, TOKENS, count
 from rps_markov.markov import BasicTransitionMatrix, BotMatchTransitionMatrix, Counts, OutcomeTransitionMatrix
 from rps_markov.payoff import PayoffMatrix
 from test_count import synthetic_rounds
+from test_markov import cycling_counts, reducible_counts
 
 # the move that beats each move
 BEATS = {"R": "P", "P": "S", "S": "R"}
@@ -136,3 +137,44 @@ def test_bot_is_lazy():
 
     for matrix in [bot.outcome, bot.basic, bot.match, bot.payoff]:
         assert "values" not in matrix.__dict__
+
+
+def test_opening_from_match_steady_state():
+    bot = Bot(synthetic_counts())
+    pi = bot.match.stationary
+    opening = bot.opening
+    by_move = [sum(p for p, s in zip(pi, TOKENS) if s.startswith(m)) for m in MOVES]
+
+    assert opening.state is None
+    np.testing.assert_array_equal(opening.x, pi)
+    np.testing.assert_allclose(opening.q, bot.outcome.P @ pi, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(opening.q, by_move, rtol=0, atol=1e-12)
+    np.testing.assert_array_equal(opening.scores, bot.payoff.scores(opening.q))
+    assert opening.move == bot.payoff.best_move(opening.q)
+    assert opening.source == "match"
+
+
+def test_opening_falls_back_to_basic():
+    bot = Bot(reducible_counts())
+    opening = bot.opening
+
+    assert bot.match.eigenvalue_one_multiplicity == 2
+    assert opening.source == "basic"
+    np.testing.assert_array_equal(opening.x, bot.basic.stationary)
+    np.testing.assert_array_equal(opening.q, bot.basic.stationary)
+    assert opening.move == bot.payoff.best_move(bot.basic.stationary)
+
+
+def test_opening_falls_back_on_unit_cycle():
+    bot = Bot(cycling_counts(), alpha=1e-12)
+
+    assert bot.match.has_unit_cycle is True
+    assert bot.match.eigenvalue_one_multiplicity == 1
+    assert bot.opening.source == "basic"
+    np.testing.assert_array_equal(bot.opening.q, bot.basic.stationary)
+
+
+def test_opening_cached():
+    bot = Bot(synthetic_counts())
+
+    assert bot.opening is bot.opening

@@ -1,5 +1,6 @@
 """Bot: one human's matrices and the bot's decision in each round, every panel number computed here."""
 from dataclasses import dataclass, fields
+from functools import cached_property
 
 import numpy as np
 
@@ -76,3 +77,12 @@ class Bot:
         x = np.zeros(len(TOKENS))
         x[TOKENS.index(state)] = 1
         return _decide(self.payoff, state, x, q, "state")
+
+    @cached_property
+    def opening(self) -> Decision:
+        """The round-1 decision: q = P pi of the 9 x 9 chain, or the 3 x 3 steady state when that pi is not unique or the chain cycles."""
+        if self.match.eigenvalue_one_multiplicity > 1 or self.match.has_unit_cycle:
+            pi = self.basic.stationary
+            return _decide(self.payoff, None, pi, pi, "basic")
+        pi = self.match.stationary
+        return _decide(self.payoff, None, pi, self.outcome.predict(pi), "match")
