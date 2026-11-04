@@ -198,22 +198,30 @@ Every matrix is a list of rows. Every eigenvalue list is a list of `[re, im]` pa
   - The code checks for an eigenvalue other than 1 with modulus 1 (`has_unit_cycle`); S2 uses it for the round-1 decision and the frontend uses it for the note (user: "yes the code checks it"). Doc delta.
   - The bot's edge is the human's loss rate minus their win rate, cross-checked by weighting the bot's best score in each state by π (`docs: PRESENTATION-FLOW.md` 2.4). Doc delta.
 - **Acceptance criteria:**
-  - [ ] `look_ahead`: row 0 equals x, row k equals `np.linalg.matrix_power(P, k) @ x`, and the last row is the first k whose step change is below tol (every earlier step change is ≥ tol). `tests/test_markov.py::test_look_ahead_stops_at_tolerance`
-  - [ ] `look_ahead` on uniform P (`zero_counts()`, `BasicTransitionMatrix`) from a one-hot x has 2 rows. `tests/test_markov.py::test_look_ahead_uniform`
-  - [ ] `look_ahead` with `tol=0`, `max_steps=5` on `BasicTransitionMatrix(Counts(count(synthetic_rounds(seed=5))))` from a one-hot x has 6 rows. `tests/test_markov.py::test_look_ahead_cap`
-  - [ ] `moduli == np.abs(eigenvalues)`. `tests/test_markov.py::test_moduli`
-  - [ ] On `bot_match(Counts(count(synthetic_rounds(seed=7))))`: `eigenvalue_one_multiplicity == 1`, `has_unit_cycle is False`, `rounds_to_fade(0.1)` is the smallest t with `moduli[1] ** t < 0.1`, `closed_groups` has 1 group, `transient_states` are exactly the states where `stationary` is 0 (atol 1e-12), `group_stationary[0] == stationary`. `tests/test_markov.py::test_diagnostics_irreducible`
-  - [ ] On the reducible counts from `test_stationary_rejects_reducible_chain`: `eigenvalue_one_multiplicity == 2`, `rounds_to_fade() is None`, `closed_groups == [["RW", "PL", "ST"], ["RT", "PW", "SL"]]`, each `group_stationary` is a fixed point of P supported on its group, each `group_outcome_rates` entry sums to 1, and `edge`/`edge_check` raise `ValueError`. `tests/test_markov.py::test_diagnostics_reducible`
-  - [ ] On the cycling counts (P after RW/RL/RT, R after PW/PL/PT/SW/SL/ST, 10 each, alpha 1e-12), `bot_match(...)` gives `has_unit_cycle is True`, `eigenvalue_one_multiplicity == 1`, and `stationary` 0.5 on RL and PL (atol 1e-9). `tests/test_markov.py::test_has_unit_cycle`
-  - [ ] On `bot_match(Counts(count(synthetic_rounds(seed=7))))`: `edge == outcome_rates["lose"] − outcome_rates["win"]` and `edge == edge_check` (atol 1e-12). `tests/test_markov.py::test_edge_cross_check`
-  - [ ] On uniform P (`zero_counts()`): `edge == 0` (atol 1e-12). `tests/test_markov.py::test_edge_uniform`
-  - [ ] `OutcomeTransitionMatrix` has none of the S3 members. `tests/test_markov.py::test_square_matrix_kinds` (extended)
-  - [ ] Full suite passes: `python -m pytest`.
+  - [x] `look_ahead`: row 0 equals x, row k equals `np.linalg.matrix_power(P, k) @ x`, and the last row is the first k whose step change is below tol (every earlier step change is ≥ tol). `tests/test_markov.py::test_look_ahead_stops_at_tolerance`
+  - [x] `look_ahead` on uniform P (`zero_counts()`, `BasicTransitionMatrix`) from a one-hot x has 3 rows (row 1 is already uniform; row 2 is the first step whose change is below tol) (changed during implementation from 2 rows, which contradicted the stop rule in **Interfaces**; user chose the Interfaces rule). `tests/test_markov.py::test_look_ahead_uniform`
+  - [x] `look_ahead` with `tol=0`, `max_steps=5` on `BasicTransitionMatrix(Counts(count(synthetic_rounds(seed=5))))` from a one-hot x has 6 rows. `tests/test_markov.py::test_look_ahead_cap`
+  - [x] `moduli == np.abs(eigenvalues)`. `tests/test_markov.py::test_moduli`
+  - [x] On `bot_match(Counts(count(synthetic_rounds(seed=7))))`: `eigenvalue_one_multiplicity == 1`, `has_unit_cycle is False`, `rounds_to_fade(0.1)` is the smallest t with `moduli[1] ** t < 0.1`, `closed_groups` has 1 group, `transient_states` are exactly the states where `stationary` is 0 (atol 1e-12), `group_stationary[0] == stationary`. `tests/test_markov.py::test_diagnostics_irreducible`
+  - [x] On the reducible counts from `test_stationary_rejects_reducible_chain`: `eigenvalue_one_multiplicity == 2`, `rounds_to_fade() is None`, `closed_groups == [["RW", "PL", "ST"], ["RT", "PW", "SL"]]`, each `group_stationary` is a fixed point of P supported on its group, each `group_outcome_rates` entry sums to 1, and `edge`/`edge_check` raise `ValueError`. `tests/test_markov.py::test_diagnostics_reducible`
+  - [x] On the cycling counts (P after RW/RL/RT, R after PW/PL/PT/SW/SL/ST, 10 each, alpha 1e-12), `bot_match(...)` gives `has_unit_cycle is True`, `eigenvalue_one_multiplicity == 1`, and `stationary` 0.5 on RL and PL (atol 1e-9). `tests/test_markov.py::test_has_unit_cycle`
+  - [x] On `bot_match(Counts(count(synthetic_rounds(seed=7))))`: `edge == outcome_rates["lose"] − outcome_rates["win"]` and `edge == edge_check` (atol 1e-12). `tests/test_markov.py::test_edge_cross_check`
+  - [x] On uniform P (`zero_counts()`): `edge == 0` (atol 1e-12). `tests/test_markov.py::test_edge_uniform`
+  - [x] `OutcomeTransitionMatrix` has none of the S3 members. `tests/test_markov.py::test_square_matrix_kinds` (extended)
+  - [x] Full suite passes: `python -m pytest`.
 - **Doc deltas:**
   - `docs/CONTRACTS.md`: the `SquareTransitionMatrix` and `BotMatchTransitionMatrix` additions: meaning, tolerances (1e-9 for eigenvalue tests, 0.01 and 100 for look-ahead), `None`/`ValueError` cases.
   - `docs/ARCHITECTURE.md`: "Not included" drops "no matrix powers" for look-ahead only.
   - `docs/PRESENTATION-FLOW.md` 2.4: "The code does not check for this case." becomes "The code checks for this case (`has_unit_cycle`)."
   - `GLOSSARY.md`: **Closed group**: a group of states the chain never leaves once in it; each has its own steady state. **Transient state**: a state in no closed group; the long run never returns to it.
+  - Decisions made during implementation:
+    - `closed_groups` comes from the reachability closure of the exact nonzero pattern of P (an entry counts if it is > 0), so tiny smoothed entries such as alpha 1e-12 still count as moves between states. `docs/CONTRACTS.md` closed groups entry.
+    - `group_stationary` is the eigenvalue-1 eigenvector of P restricted to the group's rows and columns, padded with zeros. `docs/CONTRACTS.md` closed groups entry.
+    - `rounds_to_fade` returns 0 only when modulus(λ₂) is exactly 0; on a uniform P floating point gives modulus(λ₂) about 1e-17, so it returns 1. `docs/CONTRACTS.md` `rounds_to_fade` entry.
+    - `stationary` keeps its existing eigenvector computation and now raises through `eigenvalue_one_multiplicity`, so both use the same 1e-9 test. Needs no doc beyond the shared tolerance.
+    - `outcome_rates` and `group_outcome_rates` share one private helper, so the two rates are summed the same way. Needs no doc.
+    - `tests/test_markov.py::test_diagnostics_reducible` also checks `transient_states == ["RL", "PT", "SW"]`. Needs no doc.
+    - Spec change: the uniform look-ahead criterion was 2 rows, which contradicted the stop rule in **Interfaces**; the user chose the Interfaces rule, so it is now 3 rows. `docs/CONTRACTS.md` `look_ahead` entry (row 0 is x; the converged row is included).
 
 ### S4: JSON export for the browser frontend
 

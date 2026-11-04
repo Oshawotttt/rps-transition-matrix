@@ -185,8 +185,10 @@ def test_uniform_P_eigen():
 def test_square_matrix_kinds():
     assert isinstance(BasicTransitionMatrix(zero_counts()), SquareTransitionMatrix)
     tm = OutcomeTransitionMatrix(zero_counts())
-    assert not hasattr(tm, "eigenvalues")
-    assert not hasattr(tm, "stationary")
+    for member in ["eigenvalues", "stationary", "look_ahead", "moduli", "eigenvalue_one_multiplicity",
+                   "has_unit_cycle", "rounds_to_fade", "closed_groups", "group_stationary", "transient_states",
+                   "edge", "edge_check", "group_outcome_rates"]:
+        assert not hasattr(tm, member), member
 
 
 def bot_match(counts, alpha=1.0):
@@ -249,3 +251,113 @@ def test_stationary_rejects_reducible_chain():
         tm.stationary
     with pytest.raises(ValueError):
         tm.outcome_rates
+
+
+def one_hot(n, j):
+    x = np.zeros(n)
+    x[j] = 1
+    return x
+
+
+def reducible_counts():
+    # human after RT/PW/SL plays S (bot R); after RW/PL/ST plays P (bot S): two closed classes
+    frame = pd.DataFrame(0, index=MOVES, columns=TOKENS)
+    frame.loc["S", ["RT", "PW", "SL"]] = 10
+    frame.loc["P", ["RW", "PL", "ST"]] = 10
+    return Counts(frame)
+
+
+def cycling_counts():
+    # human after R* plays P (bot S, so PL); after P* or S* plays R (bot P, so RL): RL and PL alternate
+    frame = pd.DataFrame(0, index=MOVES, columns=TOKENS)
+    frame.loc["P", ["RW", "RL", "RT"]] = 10
+    frame.loc["R", ["PW", "PL", "PT", "SW", "SL", "ST"]] = 10
+    return Counts(frame)
+
+
+def test_look_ahead_stops_at_tolerance():
+    tm = bot_match(Counts(count(synthetic_rounds(seed=7))))
+    x = one_hot(9, TOKENS.index("RW"))
+    rows = tm.look_ahead(x)
+    changes = np.abs(np.diff(rows, axis=0)).sum(axis=1)
+
+    assert rows.shape[1] == 9
+    np.testing.assert_array_equal(rows[0], x)
+    for k in range(len(rows)):
+        np.testing.assert_allclose(rows[k], np.linalg.matrix_power(tm.P, k) @ x, rtol=0, atol=1e-12)
+    assert changes[-1] < 0.01
+    assert (changes[:-1] >= 0.01).all()
+
+
+def test_look_ahead_uniform():
+    rows = BasicTransitionMatrix(zero_counts()).look_ahead(one_hot(3, 0))
+
+    assert rows.shape == (3, 3)
+    np.testing.assert_allclose(rows[1:], 1 / 3, rtol=0, atol=1e-12)
+
+
+def test_look_ahead_cap():
+    tm = BasicTransitionMatrix(Counts(count(synthetic_rounds(seed=5))))
+
+    assert tm.look_ahead(one_hot(3, 0), tol=0, max_steps=5).shape == (6, 3)
+
+
+def test_moduli():
+    tm = bot_match(Counts(count(synthetic_rounds(seed=7))))
+
+    np.testing.assert_array_equal(tm.moduli, np.abs(tm.eigenvalues))
+
+
+def test_diagnostics_irreducible():
+    tm = bot_match(Counts(count(synthetic_rounds(seed=7))))
+    expected_fade = next(t for t in range(1000) if tm.moduli[1] ** t < 0.1)
+    zero = [s for s, p in zip(TOKENS, tm.stationary) if abs(p) < 1e-12]
+
+    assert tm.eigenvalue_one_multiplicity == 1
+    assert tm.has_unit_cycle is False
+    assert tm.rounds_to_fade(0.1) == expected_fade
+    assert len(tm.closed_groups) == 1
+    assert tm.transient_states == zero
+    np.testing.assert_allclose(tm.group_stationary[0], tm.stationary, rtol=0, atol=1e-12)
+
+
+def test_diagnostics_reducible():
+    tm = bot_match(reducible_counts())
+
+    assert tm.eigenvalue_one_multiplicity == 2
+    assert tm.rounds_to_fade() is None
+    assert tm.closed_groups == [["RW", "PL", "ST"], ["RT", "PW", "SL"]]
+    assert tm.transient_states == ["RL", "PT", "SW"]
+    for group, pi in zip(tm.closed_groups, tm.group_stationary):
+        np.testing.assert_allclose(tm.P @ pi, pi, rtol=0, atol=1e-12)
+        assert pi.sum() == pytest.approx(1)
+        outside = [j for j, s in enumerate(TOKENS) if s not in group]
+        np.testing.assert_array_equal(pi[outside], 0)
+    assert len(tm.group_outcome_rates) == 2
+    for rates in tm.group_outcome_rates:
+        assert set(rates) == {"win", "lose", "tie"}
+        assert sum(rates.values()) == pytest.approx(1)
+    with pytest.raises(ValueError):
+        tm.edge
+    with pytest.raises(ValueError):
+        tm.edge_check
+
+
+def test_has_unit_cycle():
+    tm = bot_match(cycling_counts(), alpha=1e-12)
+    pi = pd.Series(tm.stationary, index=TOKENS)
+
+    assert tm.has_unit_cycle is True
+    assert tm.eigenvalue_one_multiplicity == 1
+    np.testing.assert_allclose(pi[["RL", "PL"]], 0.5, rtol=0, atol=1e-9)
+
+
+def test_edge_cross_check():
+    tm = bot_match(Counts(count(synthetic_rounds(seed=7))))
+
+    assert tm.edge == pytest.approx(tm.outcome_rates["lose"] - tm.outcome_rates["win"], abs=1e-12)
+    assert tm.edge == pytest.approx(tm.edge_check, abs=1e-12)
+
+
+def test_edge_uniform():
+    assert bot_match(zero_counts()).edge == pytest.approx(0, abs=1e-12)

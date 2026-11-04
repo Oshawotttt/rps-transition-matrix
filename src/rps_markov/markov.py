@@ -1,4 +1,5 @@
 """Counts N and the transition matrices built from it, all over k = 1 (move, outcome) states."""
+import math
 from functools import cached_property
 from pathlib import Path
 
@@ -88,14 +89,98 @@ class SquareTransitionMatrix(TransitionMatrix):
         return self._eig[0]
 
     @cached_property
+    def moduli(self) -> np.ndarray:
+        """The modulus of each eigenvalue, in the same order."""
+        return np.abs(self.eigenvalues)
+
+    @cached_property
+    def eigenvalue_one_multiplicity(self) -> int:
+        """How many eigenvalues are within 1e-9 of 1."""
+        return int(np.sum(np.abs(self.eigenvalues - 1) < 1e-9))
+
+    @cached_property
+    def has_unit_cycle(self) -> bool:
+        """Some eigenvalue has modulus 1 but is not 1 (within 1e-9), so the chain cycles and never settles."""
+        on_circle = np.abs(self.moduli - 1) < 1e-9
+        return bool(np.any(on_circle & (np.abs(self.eigenvalues - 1) >= 1e-9)))
+
+    @cached_property
     def stationary(self) -> np.ndarray:
         """Steady state pi: the eigenvalue-1 eigenvector, real, summing to 1; ValueError if eigenvalue 1 is repeated."""
+        if self.eigenvalue_one_multiplicity > 1:
+            raise ValueError(f"eigenvalue 1 has multiplicity {self.eigenvalue_one_multiplicity}, "
+                             "so the steady state is not unique")
         eigenvalues, eigenvectors = self._eig
-        ones = np.flatnonzero(np.abs(eigenvalues - 1) < 1e-9)
-        if len(ones) > 1:
-            raise ValueError(f"eigenvalue 1 has multiplicity {len(ones)}, so the steady state is not unique")
         pi = np.real(eigenvectors[:, np.argmin(np.abs(eigenvalues - 1))])
         return pi / pi.sum()
+
+    def look_ahead(self, x: np.ndarray, tol: float = 0.01, max_steps: int = 100) -> np.ndarray:
+        """Rows x, P x, P^2 x, ...; stops at the first row whose summed absolute change from the last is below tol, or at max_steps."""
+        rows = [np.asarray(x, dtype=float)]
+        for _ in range(max_steps):
+            rows.append(self.P @ rows[-1])
+            if np.abs(rows[-1] - rows[-2]).sum() < tol:
+                break
+        return np.array(rows)
+
+    def rounds_to_fade(self, fraction: float = 0.1) -> int | None:
+        """Smallest t with |lambda_2|^t < fraction; 0 when lambda_2 = 0; None when |lambda_2| is 1 (within 1e-9)."""
+        modulus = self.moduli[1]
+        if modulus >= 1 - 1e-9:
+            return None
+        if modulus == 0:
+            return 0
+        return math.ceil(math.log(fraction) / math.log(modulus))
+
+    @cached_property
+    def _reach(self) -> np.ndarray:
+        """reach[i, j]: state j can be reached from state i in zero or more steps (from the nonzero pattern of P)."""
+        reach = (self.P.T > 0) | np.eye(len(self.states), dtype=bool)
+        while True:
+            wider = (reach.astype(int) @ reach.astype(int)) > 0
+            if (wider == reach).all():
+                return reach
+            reach = wider
+
+    @cached_property
+    def _closed_indices(self) -> list[list[int]]:
+        """Index lists of the closed communicating classes, each in state order, sorted by first index."""
+        reach = self._reach
+        groups = []
+        for i in range(len(self.states)):
+            group = [j for j in range(len(self.states)) if reach[i, j] and reach[j, i]]
+            # closed: every state reachable from i reaches back to i
+            if group[0] == i and all(reach[j, i] for j in np.flatnonzero(reach[i])):
+                groups.append(group)
+        return groups
+
+    @cached_property
+    def closed_groups(self) -> list[list[str]]:
+        """The closed groups (closed communicating classes): state labels the chain never leaves once in them."""
+        return [[self.states[j] for j in group] for group in self._closed_indices]
+
+    @cached_property
+    def group_stationary(self) -> list[np.ndarray]:
+        """Per closed group, its own steady state over all states: zero outside the group, summing to 1."""
+        out = []
+        for group in self._closed_indices:
+            pi = np.zeros(len(self.states))
+            pi[group] = _eigenvalue_one_vector(self.P[np.ix_(group, group)])
+            out.append(pi)
+        return out
+
+    @cached_property
+    def transient_states(self) -> list[str]:
+        """States in no closed group: the long run never returns to them."""
+        closed = {j for group in self._closed_indices for j in group}
+        return [s for j, s in enumerate(self.states) if j not in closed]
+
+
+def _eigenvalue_one_vector(P: np.ndarray) -> np.ndarray:
+    """The real eigenvector of P for the eigenvalue nearest 1, scaled to sum to 1."""
+    eigenvalues, eigenvectors = np.linalg.eig(P)
+    pi = np.real(eigenvectors[:, np.argmin(np.abs(eigenvalues - 1))])
+    return pi / pi.sum()
 
 
 class BasicTransitionMatrix(SquareTransitionMatrix):
@@ -140,6 +225,27 @@ class BotMatchTransitionMatrix(SquareTransitionMatrix):
     @cached_property
     def outcome_rates(self) -> dict[str, float]:
         """Long-run win, lose and tie rates from the human's side: stationary summed over the *W, *L, *T tokens."""
-        pi = self.stationary
-        return {outcome: float(sum(pi[j] for j, t in enumerate(TOKENS) if t.endswith(letter)))
-                for outcome, letter in OUTCOMES.items()}
+        return _rates(self.stationary)
+
+    @cached_property
+    def group_outcome_rates(self) -> list[dict[str, float]]:
+        """Per closed group, win, lose and tie rates from its group_stationary, like outcome_rates."""
+        return [_rates(pi) for pi in self.group_stationary]
+
+    @cached_property
+    def edge(self) -> float:
+        """The bot's long-run expected score per round: the human's lose rate minus their win rate."""
+        return self.outcome_rates["lose"] - self.outcome_rates["win"]
+
+    @cached_property
+    def edge_check(self) -> float:
+        """edge computed the other way: the bot's best score in each state, weighted by stationary."""
+        human = self.outcome_matrix.P
+        best = [self.payoff.scores(human[:, j]).max() for j in range(len(TOKENS))]
+        return float(self.stationary @ np.array(best))
+
+
+def _rates(pi: np.ndarray) -> dict[str, float]:
+    """Win, lose and tie rates from the human's side: pi summed over the *W, *L, *T tokens."""
+    return {outcome: float(sum(pi[j] for j, t in enumerate(TOKENS) if t.endswith(letter)))
+            for outcome, letter in OUTCOMES.items()}
