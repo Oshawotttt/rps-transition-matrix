@@ -139,21 +139,26 @@ Every matrix is a list of rows. Every eigenvalue list is a list of `[re, im]` pa
   - Ties in A q go to the first move in R, P, S (`docs: CONTRACTS.md`, `PayoffMatrix.best_move`). Doc delta (already recorded; the Bot section points to it).
   - Matrix classes take a `Counts` and never load (`docs: ARCHITECTURE.md`); so does `Bot`. Doc delta.
 - **Acceptance criteria:**
-  - [ ] `Bot(counts).outcome.P`, `.basic.P`, `.match.P` and `.payoff.A` equal the arrays from building `OutcomeTransitionMatrix(counts, alpha)`, `BasicTransitionMatrix(counts, alpha)`, `BotMatchTransitionMatrix(...)` and `PayoffMatrix()` directly, for alpha 1 and 0.5. `tests/test_bot.py::test_bot_holds_matrices`
-  - [ ] `get_move("RL")` returns a `Decision` with `state == "RL"`, `x` one-hot at the index of `RL` in `TOKENS`, `q == outcome.column("RL")`, `scores == payoff.scores(q)`, `move == payoff.best_move(q)`, `source == "state"`. `tests/test_bot.py::test_get_move_decision`
-  - [ ] For `get_move(s)` on every s of `Counts(count(synthetic_rounds(seed=7)))`: `counter_move` beats `MOVES[argmax q]`; each `splits` row sums to 1; `splits[b, win] − splits[b, lose] == scores[b]`; `expected_score == max(scores)`. `tests/test_bot.py::test_decision_panel_fields`
-  - [ ] For a state whose q has a tie for the largest entry (built from a counts frame), `counter_move` counters the first tied move in R, P, S. `tests/test_bot.py::test_counter_move_tie`
-  - [ ] Two `Bot` instances built from different counts give independent matrices and decisions (building one does not change the other's `outcome.P` or `get_move` results). `tests/test_bot.py::test_bots_are_independent`
-  - [ ] `get_move` called twice with the same token returns equal decisions, whatever was called in between. `tests/test_bot.py::test_get_move_has_no_memory`
-  - [ ] `get_move("XX")` raises `KeyError`. `tests/test_bot.py::test_get_move_unknown_state`
-  - [ ] On `Counts(count(synthetic_rounds(seed=7)))` (the generator `tests/test_markov.py` uses), for every state s, the 3 nonzero tokens of column s of `match.P` are exactly the tokens the human gets against bot move `get_move(s).move`. `tests/test_bot.py::test_get_move_matches_match_chain`
-  - [ ] Building `Bot(counts)` does not compute any matrix value (no `values` key in any held matrix's `__dict__`). `tests/test_bot.py::test_bot_is_lazy`
-  - [ ] Full suite passes: `python -m pytest`.
+  - [x] `Bot(counts).outcome.P`, `.basic.P`, `.match.P` and `.payoff.A` equal the arrays from building `OutcomeTransitionMatrix(counts, alpha)`, `BasicTransitionMatrix(counts, alpha)`, `BotMatchTransitionMatrix(...)` and `PayoffMatrix()` directly, for alpha 1 and 0.5. `tests/test_bot.py::test_bot_holds_matrices`
+  - [x] `get_move("RL")` returns a `Decision` with `state == "RL"`, `x` one-hot at the index of `RL` in `TOKENS`, `q == outcome.column("RL")`, `scores == payoff.scores(q)`, `move == payoff.best_move(q)`, `source == "state"`. `tests/test_bot.py::test_get_move_decision`
+  - [x] For `get_move(s)` on every s of `Counts(count(synthetic_rounds(seed=7)))`: `counter_move` beats `MOVES[argmax q]`; each `splits` row sums to 1; `splits[b, win] − splits[b, lose] == scores[b]`; `expected_score == max(scores)`. `tests/test_bot.py::test_decision_panel_fields`
+  - [x] For a state whose q has a tie for the largest entry (built from a counts frame), `counter_move` counters the first tied move in R, P, S. `tests/test_bot.py::test_counter_move_tie`
+  - [x] Two `Bot` instances built from different counts give independent matrices and decisions (building one does not change the other's `outcome.P` or `get_move` results). `tests/test_bot.py::test_bots_are_independent`
+  - [x] `get_move` called twice with the same token returns equal decisions, whatever was called in between. `tests/test_bot.py::test_get_move_has_no_memory`
+  - [x] `get_move("XX")` raises `KeyError`. `tests/test_bot.py::test_get_move_unknown_state`
+  - [x] On `Counts(count(synthetic_rounds(seed=7)))` (the generator `tests/test_markov.py` uses), for every state s, the 3 nonzero tokens of column s of `match.P` are exactly the tokens the human gets against bot move `get_move(s).move`. `tests/test_bot.py::test_get_move_matches_match_chain`
+  - [x] Building `Bot(counts)` does not compute any matrix value (no `values` key in any held matrix's `__dict__`). `tests/test_bot.py::test_bot_is_lazy`
+  - [x] Full suite passes: `python -m pytest`.
 - **Doc deltas:**
   - `docs/CONTRACTS.md`: new "Bot" section: constructor, the attributes table, `get_move` input (human-side token, `KeyError` on unknown), the `Decision` fields including `counter_move`, `splits`, `expected_score`; the bot keeps no state between calls; `get_move(s)` depends only on s; matrices are per instance.
   - `docs/ARCHITECTURE.md`: module row for `src/rps_markov/bot.py`; data-flow line `Counts → Bot (holds the matrices)`; rule "The bot keeps no memory between rounds; the caller sends the human's previous token each round. No matrix changes after the bot is built."; "Not included" drops "live bot play".
   - `GLOSSARY.md`: **Decision**: one bot choice with its working (x, q, A q, move) and the per-round panel numbers.
   - `README.md`: Model bullet for `Bot(counts)`.
+  - Decisions made during implementation:
+    - `Bot.__init__` constructs the four matrix objects (which computes no values) and exposes them as plain read-only properties, so they cannot be reassigned and need no caching. `docs/CONTRACTS.md` Bot section.
+    - `Decision` defines `__eq__` comparing every field with `np.array_equal`, so two decisions compare equal field by field despite holding arrays; it is therefore unhashable. `docs/CONTRACTS.md` Bot section.
+    - `counter_move` is read from A (the bot move b with A[b, argmax q] = +1), not from a separate beats table, so A stays the one source of the game rules. Needs no doc beyond the `counter_move` field meaning.
+    - Extra test `tests/test_bot.py::test_splits_hand_checked` checks `splits` against hand-computed values. Needs no doc.
 
 ### S2: Opening move from the steady state, with 3 × 3 fallback
 
