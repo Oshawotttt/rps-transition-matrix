@@ -1,3 +1,4 @@
 # TODO
 
 - [ ] LaTeX output for matrices: `Matrix.to_latex()` on the shared base, so every subclass (`BasicTransitionMatrix`, `OutcomeTransitionMatrix`, `BotMatchTransitionMatrix`, `PayoffMatrix`) prints itself as LaTeX with row and column labels, for the slides. Follows `docs/specs/2026-11-03-split-counts-and-probability-matrix.md`.
+- [ ] Play on a phone over the laptop's hotspot (school Wi-Fi blocks device-to-device traffic). Once the React + Vite UI exists in `web/`, add a README section: turn on Windows Mobile hotspot (Settings → Network & internet → Mobile hotspot); the phone joins it; run `npx vite --host` from `web/`; the phone opens `http://192.168.137.1:5173/` (confirm the IP with `ipconfig`, under "Local Area Connection* …"). If the page doesn't load, Windows has marked the hotspot network Public: allow Node through the firewall on Public, or set the profile to Private.
