@@ -94,7 +94,7 @@ class SquareTransitionMatrix(TransitionMatrix):
         ones = np.flatnonzero(np.abs(eigenvalues - 1) < 1e-9)
         if len(ones) > 1:
             raise ValueError(f"eigenvalue 1 has multiplicity {len(ones)}, so the steady state is not unique")
-        pi = eigenvectors[:, np.argmin(np.abs(eigenvalues - 1))].real
+        pi = np.real(eigenvectors[:, np.argmin(np.abs(eigenvalues - 1))])
         return pi / pi.sum()
 
 

@@ -101,6 +101,6 @@ P, the 9 × 9 and A are never written to disk. Old `P_*.csv` and k = 3 `N_*.csv`
 
 ## CLI
 
-`python -m rps_markov.count --csv <file> [<file> ...] --out <folder>`, with `src` on `PYTHONPATH`.
+`python -m rps_markov.count --csv <file> [<file> ...] --out <folder>`, with the `rps_markov` package installed (`pip install -e .`, which `requirements.txt` includes).
 
 For each input `<name>.csv` it writes `N_<name>.csv` to `--out`, creating the folder if needed. `<name>` is the input file name without its extension, so two inputs with the same name overwrite each other's outputs. There is no `--k`, no `--alpha` and no other flag; the parser has `allow_abbrev=False`, so only the exact flags `--csv` and `--out` are accepted.

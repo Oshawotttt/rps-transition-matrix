@@ -6,7 +6,7 @@ Markov transition matrices (previous round → next move) for human rock-paper-s
 
 `data/` is gitignored, so build the dataset before computing any matrix.
 
-1. Install the dependencies:
+1. Install the dependencies and the `rps_markov` package (editable, from `src/`):
 
    ```
    pip install -r requirements.txt
@@ -32,10 +32,10 @@ Sources and licences: [data/README.md](data/README.md).
 ## Quick start: counts and P
 
 ```
-PYTHONPATH=src python -m rps_markov.count --csv data/processed/rps_human_combined.csv --out data/processed/transition_matrices
+python -m rps_markov.count --csv data/processed/rps_human_combined.csv --out data/processed/transition_matrices
 ```
 
-PowerShell: run `$env:PYTHONPATH = "src"` first, then the same command without the `PYTHONPATH=src` prefix.
+This needs the package installed (setup step 1). Run it from the repo root, since the paths are relative.
 
 This writes `N_rps_human_combined.csv` (counts) only; output files are named after the input CSV, and `--csv` takes several files. P is derived from N when needed and never written:
 

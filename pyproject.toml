@@ -1,3 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rps-markov"
+version = "0.1.0"
+description = "Markov transition matrices (previous round -> next move) for human rock-paper-scissors moves."
+requires-python = ">=3.10"
+dependencies = ["numpy", "pandas"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
