@@ -79,7 +79,7 @@ export default function Projector({ bot }) {
           <div className="score">
             <span>{botWins}<small>Bot</small></span><span className="dash">–</span><span>{friendWins}<small>{name}</small></span>
           </div>
-          <p>Best of {game.bestOf} · first to {game.target} · Round {view.round}</p>
+          <p>Best of {game.bestOf}</p>
         </div>
         <div className="bust bot"><svg><use href="#robot" /></svg></div>
         <div className="bust hum"><svg><use href="#human" /></svg></div>
@@ -106,7 +106,6 @@ export default function Projector({ bot }) {
           <button key={id} className="tab" role="tab" id={`tab-${id}`} aria-controls={`p-${id}`} aria-selected={tab === id} onClick={() => setTab(id)}>{label}</button>
         ))}
         <div className="mini">
-          <span>Bot <b>{botWins}</b> – <b>{friendWins}</b> <span className="who">{name}</span></span>
           <div className="len" role="group" aria-label="Match length">
             {[3, 5].map((n) => (
               <button key={n} aria-pressed={game.bestOf === n} disabled={game.history.length > 0} onClick={() => restart(n)}>Best of {n}</button>
@@ -130,7 +129,7 @@ export default function Projector({ bot }) {
       </main>
 
       {won && (
-        <WinScreen winner={game.winner} name={name} tally={game.tally} bestOf={game.bestOf} rounds={game.history.length}
+        <WinScreen winner={game.winner} name={name} tally={game.tally}
           onMain={onMain} onPlay={(n) => { restart(n); window.scrollTo(0, 0); }} />
       )}
     </>

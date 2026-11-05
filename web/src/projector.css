@@ -70,7 +70,6 @@ button { font: inherit; color: inherit; }
 .tab:hover { background: var(--wall); }
 .tab[aria-selected="true"] { background: var(--ink); color: var(--paper); }
 .mini { margin-left: auto; font: 700 20px var(--text); display: flex; align-items: center; gap: 14px; }
-.mini b { font: 800 28px var(--display); }
 .len { display: flex; gap: 4px; padding: 4px; border-radius: 12px; box-shadow: inset 0 0 0 2px var(--t); }
 .len button { height: 38px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; font: 700 16px var(--text); cursor: pointer; }
 .len button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
@@ -206,8 +205,7 @@ details[open] .chev { transform: rotate(180deg); }
 .m9 .nz.t { background: color-mix(in srgb, var(--t) 75%, var(--paper)); }
 
 /* the opponent's name comes from the bot file and can be long */
-.mini .who { display: inline-block; vertical-align: bottom; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tab, .len button, .ghost, .mini > span { white-space: nowrap; }
+.tab, .len button, .ghost { white-space: nowrap; }
 /* labels hang under the digits so a long name cannot push the score off centre */
 .score > span:not(.dash) { position: relative; }
 .score small { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -236,7 +234,7 @@ details[open] .chev { transform: rotate(180deg); }
 .win-head h1 { font: 800 clamp(52px, 9vh, 96px)/1 var(--display); letter-spacing: -.03em; text-wrap: balance; animation: pop .8s 1s cubic-bezier(.34, 1.56, .64, 1) both; }
 .win-head h1 span { color: var(--gold-top); }
 .win-head p { margin-top: 1.6vh; font-size: clamp(19px, 2.4vh, 26px); color: #d7d9df; animation: rise .7s 1.25s var(--ease) both; }
-.win-head p b { font: 800 1.25em var(--display); color: var(--paper); margin-right: 4px; }
+.win-head p b { font: 800 1.6em var(--display); color: var(--paper); }
 
 .stage { position: relative; z-index: 2; display: flex; justify-content: center; align-items: flex-end; overflow: hidden; }
 .champ-col { display: flex; flex-direction: column; align-items: center; }

@@ -153,7 +153,6 @@ export default function RoundReport(props) {
               : <>x = <b>π</b>: no previous round</>}
         </p>
       </div>
-      <p className="intro">Same three steps every round. Only x changes.</p>
       {!state && <Fallback bot={bot} />}
       <Predict {...props} />
       <Score {...props} />

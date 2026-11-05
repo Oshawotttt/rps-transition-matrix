@@ -221,14 +221,13 @@ function Cloud() {
   );
 }
 
-export default function WinScreen({ winner, name, tally, bestOf, rounds, onMain, onPlay }) {
+export default function WinScreen({ winner, name, tally, onMain, onPlay }) {
   const canvas = useRef(null);
   const first = useRef(null);
   const burst = useConfetti(canvas);
   const botWon = winner === "bot";
   const winnerName = botWon ? "The Bot" : name;
   const loserName = botWon ? name : "The Bot";
-  const ties = tally.tie;
 
   useEffect(() => {
     first.current?.focus({ preventScroll: true });
@@ -252,10 +251,7 @@ export default function WinScreen({ winner, name, tally, bestOf, rounds, onMain,
       <div className="pool" aria-hidden="true" />
       <header className="win-head">
         <h1 id="win-title">{botWon ? <>The Bot <span>wins!</span></> : <>{name} <span>wins!</span></>}</h1>
-        <p>
-          <b>{botWon ? tally.lose : tally.win}–{botWon ? tally.win : tally.lose}</b> in a best of {bestOf}
-          {" · "}{rounds} {rounds === 1 ? "round" : "rounds"}{ties > 0 && `, ${ties} ${ties === 1 ? "tie" : "ties"} replayed`}
-        </p>
+        <p><b>{botWon ? tally.lose : tally.win}–{botWon ? tally.win : tally.lose}</b></p>
       </header>
 
       <div className="stage">
