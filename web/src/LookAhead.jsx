@@ -234,10 +234,13 @@ export default function LookAhead({ bot, state }) {
       </div>
 
       {d && (
-        <div className="sec">
-          <h2>Why that move</h2>
-          <p className="cap" style={{ marginBottom: 18 }}>The same three steps as each round, with Mᵗ x in place of a one-hot x. Open a step to check it.</p>
-          <Step n={1} title="Predict" formula="q = P Mᵗ x" open={false}>
+        <details className="sec report">
+          <summary>
+            <h2>Why that move<em>Predict, Score, Choose</em></h2>
+            <svg className="chev" aria-hidden="true"><use href="#chev" /></svg>
+          </summary>
+          <p className="cap">The same three steps as each round, with Mᵗ x in place of a one-hot x.</p>
+          <Step n={1} title="Predict" formula="q = P Mᵗ x">
             <p>We only know the state as the chances in Mᵗ x, so q mixes the 9 columns of P, each weighted by its chance.</p>
             <div className="eq">
               <span className="lab">q =</span>
@@ -249,8 +252,8 @@ export default function LookAhead({ bot, state }) {
             </div>
             <QBars q={d.q} moves={moves} />
           </Step>
-          <Score bot={bot} decision={d} open={false} />
-          <Step n={3} title="Choose" formula="the largest entry of A q" open={false}>
+          <Score bot={bot} decision={d} />
+          <Step n={3} title="Choose" formula="the largest entry of A q">
             <p>Pick the row of A q with the largest score. If two tie, take the first in the order R, P, S.</p>
             <div className="opts">
               {moves.map((m, i) => (
@@ -264,7 +267,7 @@ export default function LookAhead({ bot, state }) {
               <p className="flag">Note: countering their likeliest move would mean playing {NAME[d.counter_move]}.</p>
             )}
           </Step>
-        </div>
+        </details>
       )}
     </>
   );

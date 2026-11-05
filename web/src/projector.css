@@ -93,7 +93,13 @@ details.step > summary::-webkit-details-marker { display: none; }
 summary h2 { font: 800 36px var(--display); letter-spacing: -.01em; }
 summary h2 em { font: 400 28px var(--text); font-style: normal; margin-left: 14px; }
 summary .chev { margin-left: auto; width: 26px; height: 26px; transition: transform .3s var(--ease); }
-details[open] .chev { transform: rotate(180deg); }
+details[open] > summary .chev { transform: rotate(180deg); }
+/* one disclosure around the three steps, so they hide and show together */
+details.report > summary { list-style: none; display: flex; align-items: center; gap: 20px; padding: 6px 0 14px; cursor: pointer; }
+details.report > summary::-webkit-details-marker { display: none; }
+details.report > summary h2 { font: 800 32px var(--display); margin: 0; }
+details.report > summary h2 em { font-size: 24px; color: var(--ink2); }
+details.report > .cap { margin-bottom: 18px; }
 .sbody { padding: 0 0 40px 72px; display: grid; gap: 26px; }
 .sbody p { max-width: 68ch; line-height: 1.5; }
 .eq { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 24px; }
