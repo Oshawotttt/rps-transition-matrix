@@ -29,7 +29,7 @@ STEP 2 CHART (chosen 2026-11-05, draft 7 of `.impeccable/mocks/drafts-v4/score-c
 
 SIGNATURE: Step 3 holds the three move buttons. A wrong pick shakes and states its score; the right pick reveals both cards and the result, then "Next round" returns to the top.
 
-Look ahead (built 2026-11-05, `web/src/LookAhead.jsx`): start-state picker (defaults to the current state), the formula (x = Σ cᵢvᵢ, M vᵢ = λᵢvᵢ, Mᵗx = c₁λ₁ᵗv₁ + c₂λ₂ᵗv₂ + c₃λ₃ᵗv₃ + ⋯), a sticky back/forward stepper (also ← →), the first 3 terms with real c, λ and v, then Mᵗ x beside horizontal bars on the same rows with π ticks. Stepping rolls only the powers and the answer; bars slide. t runs 0 to `look_ahead[s].stopped_at`. Under the answer: a read-out of the likeliest state now and in π (row highlighted), a right-hand card pair (their likely throw from q = P Mᵗx, our move from A q, from `look_ahead[s].decisions[t]`), then Predict, Score, Choose as collapsed steps.
+Look ahead (built 2026-11-05, `web/src/LookAhead.jsx`): start-state picker (defaults to the current state), the formula (x = Σ cᵢvᵢ, M vᵢ = λᵢvᵢ, Mᵗx = c₁λ₁ᵗv₁ + c₂λ₂ᵗv₂ + c₃λ₃ᵗv₃ + ⋯), a sticky back/forward stepper (also ← →), the first 3 terms with real c, λ and v, then Mᵗ x beside horizontal bars on the same rows with π ticks. Stepping rolls only the powers and the answer; bars slide. t runs 0 to `look_ahead[s].stopped_at`. Under the answer: a read-out of the likeliest state now and in π (row highlighted), a right-hand card pair (their likely throw from q = P Mᵗx, our move from A q, from `look_ahead[s].decisions[t]`), then "Why that move": one disclosure (collapsed by default) holding Predict, Score, Choose, each open inside and still collapsible on its own.
 
 ## Unresolved
 
