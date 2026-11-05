@@ -83,6 +83,7 @@ test("host stream sends the starting state", async () => {
   assert.match(host.contentType, /^text\/event-stream/);
   const state = await host.next();
   assert.equal(state.role, "host");
+  assert.equal(state.started, false);
   assert.equal(state.bot, DEFAULT);
   assert.equal(state.flow.phase, "think");
   assert.equal(state.flow.game.bestOf, 3);
@@ -129,7 +130,7 @@ test("a guest stream takes the empty seat; a second id finds it taken", async ()
   assert.equal(mine.view.phase, "open");
   const second = await stream("role=player&seat=b", REMOTE);
   const taken = await second.next();
-  assert.deepEqual(taken, { role: "player", seat: "taken", view: null });
+  assert.deepEqual(taken, { role: "player", started: false, seat: "taken", view: null });
   const hostState = await host.next();
   assert.equal(hostState.seat, "taken");
   assert.equal(hostState.playerOnline, true);
@@ -151,11 +152,17 @@ async function hostState() {
   return state;
 }
 
+// starts a best of 3 with the default bot, as the lobby's Start game does
+async function startMatch() {
+  assert.equal((await post("/api/host/new", { bestOf: 3 })).status, 204);
+}
+
 function otherMove(move) {
   return ["R", "P", "S"].find((m) => m !== move);
 }
 
 test("a full round over HTTP", async () => {
+  await startMatch();
   const host = await stream("role=host");
   const start = await host.next();
   const guest = await stream("role=player&seat=a", REMOTE);
@@ -177,6 +184,7 @@ test("a full round over HTTP", async () => {
 });
 
 test("flow errors are 409", async () => {
+  await startMatch();
   const { flow } = await hostState();
   const pick = flow.game.decision.move;
   assert.equal((await post("/api/host/pick", { move: otherMove(pick) })).status, 409);
@@ -191,6 +199,7 @@ test("flow errors are 409", async () => {
 });
 
 test("bad input is 400", async () => {
+  await startMatch();
   for (const [path, body] of [
     ["/api/host/pick", { move: "X" }],
     ["/api/host/throw", { move: "X" }],
@@ -219,6 +228,7 @@ test("host paths are refused from a remote address and change nothing", async ()
     ["/api/host/next", {}],
     ["/api/host/new", { bestOf: 5 }],
     ["/api/host/free-seat", {}],
+    ["/api/host/lobby", {}],
   ]) {
     assert.equal((await post(path, body, REMOTE)).status, 403, path);
   }
@@ -236,6 +246,7 @@ test("seat-holder paths refuse another seat id", async () => {
 });
 
 test("new match: best of 5, then another bot", async () => {
+  await startMatch();
   const host = await stream("role=host");
   await host.next();
   const pick = (await hostState()).flow.game.decision.move;
@@ -252,6 +263,38 @@ test("new match: best of 5, then another bot", async () => {
   assert.equal(other.bot, OTHER);
   assert.equal(other.flow.game.bestOf, 3);
   host.close();
+});
+
+test("the lobby refuses play until the host starts, and the host can go back to it", async () => {
+  const guest = await stream("role=player&seat=a", REMOTE);
+  const waiting = await guest.next();
+  assert.equal(waiting.started, false);
+  assert.equal(waiting.seat, "mine");
+  const pick = (await hostState()).flow.game.decision.move;
+  for (const [path, body, headers] of [
+    ["/api/host/pick", { move: pick }],
+    ["/api/host/throw", { move: "R" }],
+    ["/api/host/next", {}],
+    ["/api/player/throw", { seat: "a", move: "R" }, REMOTE],
+  ]) {
+    const res = await post(path, body, headers);
+    assert.equal(res.status, 409, path);
+    assert.match(res.json.error, /not started/);
+  }
+  assert.equal((await post("/api/host/new", { bestOf: 5, bot: OTHER })).status, 204);
+  const live = await guest.next();
+  assert.equal(live.started, true);
+  assert.equal(live.view.bestOf, 5);
+  assert.equal((await post("/api/player/throw", { seat: "a", move: "R" }, REMOTE)).status, 204);
+  await guest.next();
+  assert.equal((await post("/api/host/lobby")).status, 204);
+  assert.equal((await guest.next()).started, false);
+  const back = await hostState();
+  assert.equal(back.started, false);
+  assert.equal(back.bot, OTHER);
+  assert.equal(back.flow.game.bestOf, 5);
+  assert.equal((await post("/api/host/lobby", {}, REMOTE)).status, 403);
+  guest.close();
 });
 
 test("bots lists the .json files, sorted", async () => {
@@ -301,6 +344,7 @@ function losingThrow(botMove) {
 }
 
 test("no guest event in a full match holds the decision, the pick or the history", async () => {
+  await startMatch();
   const guest = await stream("role=player&seat=a", REMOTE);
   const events = [await guest.next()];
   let state = await hostState();

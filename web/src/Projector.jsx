@@ -132,6 +132,7 @@ export default function Projector({ bot, server, status, onLeave }) {
             {bots.map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
         </label>
+        <button className="ghost" onClick={() => send("/api/host/lobby")}>Back to lobby</button>
         <button className="ghost leave" onClick={onLeave}>Leave</button>
       </div></div>
       {status === "reconnecting" && <p className="banner" role="status">Reconnecting to the server…</p>}
