@@ -125,6 +125,7 @@ export function Sprites() {
           <ellipse className="hu-eye" cx="84" cy="96" rx="4.6" ry="6" /><ellipse className="hu-eye" cx="116" cy="96" rx="4.6" ry="6" />
           <circle className="hu-cheek" cx="72" cy="110" r="6" /><circle className="hu-cheek" cx="128" cy="110" r="6" /><path className="hu-smile" d="M92 112q8 7 16 0" />
         </symbol>
+        <symbol id="nobody" viewBox="0 0 200 200"><circle className="nb" cx="100" cy="88" r="44" /><path className="nb" d="M40 202v-22c0-22 16-34 40-36h40c24 2 40 14 40 36v22" /></symbol>
         <symbol id="mR" viewBox="0 0 48 48"><path d="M8 31c-2-10 6-19 17-19s18 8 16 18c-1 8-9 11-16 11-9 0-16-3-17-10z" /></symbol>
         <symbol id="mP" viewBox="0 0 48 48"><path d="M11 5h20l9 9v29H11z" /><path d="M31 5v9h9" fill="#fff" opacity=".45" /></symbol>
         <symbol id="mS" viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round"><circle cx="14" cy="35" r="6.5" /><circle cx="34" cy="35" r="6.5" /><path d="M18 30 35 6M30 30 13 6" /></g></symbol>

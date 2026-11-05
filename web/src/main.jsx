@@ -10,6 +10,7 @@ import "@fontsource/gabarito/800.css";
 import "./projector.css";
 import { loadBot } from "./game.js";
 import { chooseRole, connect, getJson, savedRole } from "./net.js";
+import Lobby from "./Lobby.jsx";
 import Player from "./Player.jsx";
 import Projector from "./Projector.jsx";
 import Start from "./Start.jsx";
@@ -28,7 +29,8 @@ function Status({ title, children }) {
   return <main className="status">{title && <h1>{title}</h1>}{children}</main>;
 }
 
-// The projector: follows the server's match and loads the bot it names, again whenever the name changes.
+// The host: the lobby until the server's match starts, then the projector. Loads the bot the server names,
+// again whenever the name changes.
 function Host({ onLeave }) {
   const [server, setServer] = useState(null);
   const [status, setStatus] = useState("connecting");
@@ -56,6 +58,9 @@ function Host({ onLeave }) {
   if (error) return <Status title="The projector can't reach the match"><p>{error}</p></Status>;
   if (!server) return <Status><p>Connecting to the server…</p></Status>;
   if (bot?.name !== name) return <Status><p>Loading the bot from bots/{name}…</p></Status>;
+  if (!server.started) {
+    return <Lobby server={server} status={status} name={bot.data.opponent ?? "Your friend"} onLeave={() => onLeave(null)} />;
+  }
   return <Projector bot={bot.data} server={server} status={status} onLeave={() => onLeave(null)} />;
 }
 
@@ -84,7 +89,7 @@ function App() {
 
   if (role === "host") return <Host onLeave={onLeave} />;
   if (role === "player") return <Player onLeave={() => onLeave(null)} />;
-  return <Start onHost={onHost} onGuest={() => choose("player")} message={message} busy={busy} />;
+  return <Start onHost={onHost} onGuest={() => choose("player")} message={message} busy={busy} refused={message === REFUSED} />;
 }
 
 createRoot(document.getElementById("root")).render(<StrictMode><App /></StrictMode>);

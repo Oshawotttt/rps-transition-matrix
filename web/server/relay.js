@@ -17,6 +17,7 @@ const NOT_HOST = "hosting works only on the laptop running the server";
 const BOT_NAME = /^[A-Za-z0-9_.-]+\.json$/;
 // flow.js error codes: a bad move is bad input, the others a call at the wrong moment
 const FLOW_STATUS = { move: 400, phase: 409, wrong: 409 };
+const NOT_STARTED = "the match has not started: the host starts it from the lobby";
 
 // An error the middleware answers with `status` and {error: message}.
 class HttpError extends Error {
@@ -62,6 +63,8 @@ function applyFlow(fn) {
 export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback } = {}) {
   let botName = DEFAULT_BOT;
   let flow = newFlow(readBot(botsDir, botName), 3);
+  // false in the lobby, before the host starts a match; nothing can be picked or thrown until then
+  let started = false;
   // the seat holder's id, or null when the seat is empty
   let seat = null;
   // open events streams: {res, role, seat}
@@ -75,10 +78,10 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
   function stateFor(s) {
     if (s.role === "host") {
       const playerOnline = seat !== null && [...streams].some((o) => o.role === "player" && o.seat === seat);
-      return { role: "host", bot: botName, flow: hostView(flow), seat: seatSeen(), playerOnline };
+      return { role: "host", started, bot: botName, flow: hostView(flow), seat: seatSeen(), playerOnline };
     }
-    if (seat !== null && s.seat === seat) return { role: "player", seat: "mine", view: playerView(flow) };
-    return { role: "player", seat: seatSeen(), view: null };
+    if (seat !== null && s.seat === seat) return { role: "player", started, seat: "mine", view: playerView(flow) };
+    return { role: "player", started, seat: seatSeen(), view: null };
   }
 
   function send(s) {
@@ -139,6 +142,12 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
     return body.seat;
   }
 
+  // Runs one flow.js call on the match; refused in the lobby.
+  function play(fn) {
+    if (!started) throw new HttpError(409, NOT_STARTED);
+    flow = applyFlow(fn);
+  }
+
   function mustHold(body) {
     const id = seatIdOf(body);
     if (id !== seat) throw new HttpError(403, "this seat id does not hold the seat");
@@ -146,16 +155,20 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
 
   // POST routes: [who, handler(body)]; a handler changes the match or the seat, then everyone gets the new state
   const posts = {
-    "/api/host/pick": ["host", (body) => { flow = applyFlow(() => pickMove(flow, body.move)); }],
-    "/api/host/throw": ["host", (body) => { flow = applyFlow(() => throwMove(flow, body.move)); }],
-    "/api/host/next": ["host", () => { flow = applyFlow(() => nextRound(flow)); }],
+    "/api/host/pick": ["host", (body) => play(() => pickMove(flow, body.move))],
+    "/api/host/throw": ["host", (body) => play(() => throwMove(flow, body.move))],
+    "/api/host/next": ["host", () => play(() => nextRound(flow))],
+    // starts a new match, from the lobby or over the one in play
     "/api/host/new": ["host", (body) => {
       if (body.bestOf !== 3 && body.bestOf !== 5) throw new HttpError(400, `bestOf must be 3 or 5, got ${body.bestOf}`);
       const name = body.bot ?? botName;
       const bot = loadNamed(name);
       flow = newFlow(bot, body.bestOf);
       botName = name;
+      started = true;
     }],
+    // back to the lobby; the bot and match length stay as the lobby's starting choice
+    "/api/host/lobby": ["host", () => { started = false; }],
     "/api/host/free-seat": ["host", () => { seat = null; }],
     "/api/player/claim": ["player", (body) => {
       const id = seatIdOf(body);
@@ -168,7 +181,7 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
     }],
     "/api/player/throw": ["player", (body) => {
       mustHold(body);
-      flow = applyFlow(() => throwMove(flow, body.move));
+      play(() => throwMove(flow, body.move));
     }],
   };
 

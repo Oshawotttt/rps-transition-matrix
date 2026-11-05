@@ -71,6 +71,7 @@ export default function Player({ onLeave }) {
       </div>
     );
   } else if (state.seat === "empty") body = <p className="g-note">Taking the seat…</p>;
+  else if (!state.started) body = <p className="g-note">You have the seat. Waiting for the host to start the match.</p>;
   else body = <Seat view={state.view} onThrow={(move) => send("/api/player/throw", { move })} />;
 
   return (
