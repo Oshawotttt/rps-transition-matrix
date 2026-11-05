@@ -253,6 +253,9 @@ Responses: `204` on success. Errors return JSON `{error: <message>}`: `400` bad 
   - Decision made: the guest styles go at the end of `web/src/projector.css` (one stylesheet), not a new `player.css`. No doc needed: the file holds them under a comment.
   - Decision made: a closed guest stream shows a message naming `npm run host`; while it retries a "Reconnecting" banner shows. Goes in `docs/ARCHITECTURE.md`.
   - Decision made (code review): a tab whose seat the host freed does not claim it again on its own; it shows "The host freed your seat" and a "Take the seat again" button, so Free the seat hands the seat to the next guest even while the freed tab stays open. Goes in `docs/ARCHITECTURE.md` and `PRODUCT.md`.
+  - Decision made (code review): the freed state ends once the tab sees the seat `"taken"` or `"mine"`, so the next empty seat is claimed as usual. Goes in `docs/ARCHITECTURE.md`.
+  - Decision made (code review): a guest's `claim` that loses the race (`403`) shows no banner; the next event says `"taken"`. No doc needed: code comment in `web/src/Player.jsx`.
+  - Decision made (code review): the projector's guest status says "Guest has thrown" only before the round plays, not in `"result"`. No doc needed: code comment in `web/src/Projector.jsx`.
 
 ## Human checks
 

@@ -30,10 +30,9 @@ export default function Player({ onLeave }) {
   }, [id]);
 
   useEffect(() => {
-    if (state?.seat === "mine") {
-      held.current = true;
-      setFreed(false);
-    }
+    if (state?.seat === "mine") held.current = true;
+    // once someone holds the seat, this tab's freed seat is old news: the next empty seat is claimed as usual
+    if (state?.seat === "mine" || state?.seat === "taken") setFreed(false);
     if (state?.seat !== "empty") {
       claimed.current = false;
       return;
@@ -45,7 +44,8 @@ export default function Player({ onLeave }) {
     }
     if (claimed.current || leaving.current || freed) return;
     claimed.current = true;
-    post("/api/player/claim", { seat: id }).catch((e) => setFailed(e.message));
+    // a 403 means another tab claimed first; the next event says "taken", so it needs no banner
+    post("/api/player/claim", { seat: id }).catch((e) => e.status !== 403 && setFailed(e.message));
   }, [state, id, freed]);
 
   function send(path, body) {

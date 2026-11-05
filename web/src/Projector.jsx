@@ -12,7 +12,8 @@ const TABS = [["round", "This round"], ["long", "Long run"], ["tally", "Tally"],
 function guestStatus(server) {
   if (server.seat === "empty") return ["off", "No guest yet"];
   if (!server.playerOnline) return ["off", "Guest offline"];
-  if (server.flow.thrown) return ["on", "Guest has thrown"];
+  // in "result" the throw belongs to the round just played, so it is not news
+  if (server.flow.thrown && server.flow.phase !== "result") return ["on", "Guest has thrown"];
   return ["on", "Guest online"];
 }
 
