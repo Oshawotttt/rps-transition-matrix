@@ -464,3 +464,20 @@ div.mv { cursor: default; }
 .banner { background: var(--hi); text-align: center; padding: 10px 24px; font: 700 19px var(--text); }
 .banner.bad { color: var(--l); }
 .wait { font: 700 21px var(--text); color: var(--ink2); }
+/* guest screen: a laptop browser, the throw and the result only */
+.guest-screen { min-height: 100vh; background: var(--paper); }
+.g-top { display: flex; align-items: center; justify-content: space-between; max-width: 960px; margin: 0 auto; padding: 28px 24px 0; }
+.g-top h1 { font: 800 30px var(--display); }
+.g-main { max-width: 960px; margin: 0 auto; padding: 32px 24px 80px; display: grid; gap: 24px; }
+.g-note { font: 700 26px/1.4 var(--text); color: var(--ink2); margin-top: 60px; }
+.g-score { display: flex; align-items: baseline; gap: 22px; font: 800 96px/1 var(--display); }
+.g-score small { display: block; font: 700 20px var(--text); color: var(--ink2); margin-top: 6px; }
+.g-score .dash { color: var(--faint); }
+.g-round { font: 700 22px var(--text); color: var(--ink2); }
+.g-step { display: grid; gap: 18px; background: var(--wall); border-radius: 16px; padding: 28px; }
+.g-step h2 { font: 800 36px/1.1 var(--display); }
+.g-step .pair { display: flex; gap: 14px; }
+.g-step .crd { width: 92px; height: 116px; }
+.g-step .crd svg.ic { width: 46px; height: 46px; }
+.g-step .mv { background: var(--paper); }
+.g-end { font: 800 30px var(--display); }

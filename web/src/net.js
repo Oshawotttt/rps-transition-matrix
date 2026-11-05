@@ -57,3 +57,16 @@ export function savedRole(storage) {
   const role = storage.getItem(ROLE_KEY);
   return ROLES.includes(role) ? role : null;
 }
+
+const SEAT_KEY = "rps.seat";
+
+// This tab's seat id: the stored one, or a new one from `random` (12 base-36 characters), stored so a refresh
+// keeps the seat. Not crypto.randomUUID, which browsers leave out on a plain-http LAN address.
+export function seatId(storage, random = Math.random) {
+  const stored = storage.getItem(SEAT_KEY);
+  if (stored) return stored;
+  let id = "";
+  for (let k = 0; k < 3; k++) id += Math.floor(random() * 36 ** 4).toString(36).padStart(4, "0");
+  storage.setItem(SEAT_KEY, id);
+  return id;
+}

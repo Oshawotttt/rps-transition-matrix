@@ -10,6 +10,7 @@ import "@fontsource/gabarito/800.css";
 import "./projector.css";
 import { loadBot } from "./game.js";
 import { chooseRole, connect, getJson, savedRole } from "./net.js";
+import Player from "./Player.jsx";
 import Projector from "./Projector.jsx";
 import Start from "./Start.jsx";
 
@@ -81,14 +82,7 @@ function App() {
   }
 
   if (role === "host") return <Host onLeave={onLeave} />;
-  if (role === "player") {
-    return (
-      <Status title="Guest screen">
-        <p>The guest screen is not built yet.</p>
-        <p><button className="ghost" onClick={() => onLeave(null)}>Back</button></p>
-      </Status>
-    );
-  }
+  if (role === "player") return <Player onLeave={() => onLeave(null)} />;
   return <Start onHost={onHost} onGuest={() => choose("player")} message={message} busy={busy} />;
 }
 

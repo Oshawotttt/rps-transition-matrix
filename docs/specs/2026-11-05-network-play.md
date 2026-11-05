@@ -240,12 +240,18 @@ Responses: `204` on success. Errors return JSON `{error: <message>}`: `400` bad 
   - The guest screen never shows the bot's matrices or its move before the round has played (docs: `PRODUCT.md` "The human's screen stays minimal"; user, confirmed). Doc delta for the rest.
   - User: "i don't need phone. everything accessed on laptop". Designed for a laptop browser; no phone layout. Uses the cards and move icons from `ui.jsx`. Doc delta (Out of scope).
 - **Acceptance criteria:**
-  - [ ] `seatId` returns the stored id when there is one, and otherwise makes one from `random`, stores it and returns it; two calls on one storage return the same id (`web/test/net.test.js`).
-  - [ ] `npm run build` (from `web/`) succeeds.
-  - [ ] The full suite passes: `node --test "web/test/*.test.js"`.
+  - [x] `seatId` returns the stored id when there is one, and otherwise makes one from `random`, stores it and returns it; two calls on one storage return the same id (`web/test/net.test.js`).
+  - [x] `npm run build` (from `web/`) succeeds.
+  - [x] The full suite passes: `node --test "web/test/*.test.js"`.
 - **Doc deltas:**
   - `docs/ARCHITECTURE.md`: `web/src/Player.jsx` in Modules; the guest screen shows only the score, the round, the throw buttons, the result and the match result; the seat id is kept in the tab's `sessionStorage`; "Not included": no phone layout.
   - `PRODUCT.md`: the human player plays on a second laptop; their view: throw, wait, result, match result; "Someone else is playing" for a second guest.
+  - Decision made: the seat id is 12 base-36 characters from three `random()` calls, under the `sessionStorage` key `rps.seat`; it stays after Leave, so a returning tab reuses it. Goes in `docs/ARCHITECTURE.md`.
+  - Decision made: the guest posts `claim` once per "empty" it sees and never while leaving, so the "empty" event that its own `leave` causes cannot take the seat back. Goes in `docs/ARCHITECTURE.md`.
+  - Decision made: in "result" the guest screen shows `last.round`, since `view.round` is already the next round. No doc needed: code comment in `web/src/Player.jsx`.
+  - Decision made: the score reads from the guest's side (`tally.win` is the guest's, `tally.lose` the bot's). Goes in `PRODUCT.md` with the guest's view.
+  - Decision made: the guest styles go at the end of `web/src/projector.css` (one stylesheet), not a new `player.css`. No doc needed: the file holds them under a comment.
+  - Decision made: a closed guest stream shows a message naming `npm run host`; while it retries a "Reconnecting" banner shows. Goes in `docs/ARCHITECTURE.md`.
 
 ## Human checks
 

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { chooseRole, connect, getJson, post, savedRole } from "../src/net.js";
+import { chooseRole, connect, getJson, post, savedRole, seatId } from "../src/net.js";
 
 // An EventSource stand-in the test drives by hand; the last one made is in FakeEventSource.last.
 class FakeEventSource {
@@ -135,4 +135,31 @@ test("an unknown stored role reads as null", () => {
     storage.setItem(storage.keys()[0], bad);
     assert.equal(savedRole(storage), null, bad);
   }
+});
+
+// a random stand-in that walks through fixed numbers in [0, 1)
+function fakeRandom(...values) {
+  let i = 0;
+  return () => values[i++ % values.length];
+}
+
+test("seatId makes one id, stores it and returns the stored one after", () => {
+  const storage = fakeStorage();
+  const id = seatId(storage, fakeRandom(0.25, 0.5, 0.75));
+  assert.equal(typeof id, "string");
+  assert.match(id, /^[0-9a-z]{12,}$/);
+  assert.equal(storage.size, 1);
+  assert.equal(storage.getItem(storage.keys()[0]), id);
+  // a second call reads the stored id and never calls random
+  assert.equal(seatId(storage, () => { throw new Error("random called"); }), id);
+  // another tab, another id
+  assert.notEqual(seatId(fakeStorage(), fakeRandom(0.1, 0.2, 0.3)), id);
+});
+
+test("seatId keeps an id that is already stored", () => {
+  const storage = fakeStorage();
+  seatId(storage, fakeRandom(0.25));
+  const [key] = storage.keys();
+  storage.setItem(key, "kept-id");
+  assert.equal(seatId(storage, fakeRandom(0.9)), "kept-id");
 });
