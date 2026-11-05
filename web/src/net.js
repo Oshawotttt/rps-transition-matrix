@@ -17,7 +17,7 @@ export function connect(url, onState, EventSourceImpl = globalThis.EventSource) 
 }
 
 // Rejects with the server's {error} message, or the status when the body has none; `status` is on the Error.
-async function refuse(response) {
+async function rejectWith(response) {
   let message = `HTTP ${response.status}`;
   try {
     message = (await response.json()).error ?? message;
@@ -32,13 +32,13 @@ export async function post(path, body, fetchFn = globalThis.fetch) {
   const response = await fetchFn(path, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   });
-  if (response.status !== 204) await refuse(response);
+  if (response.status !== 204) await rejectWith(response);
 }
 
 // GETs JSON, e.g. the host's bot list; rejects like `post` on any status but 200.
 export async function getJson(path, fetchFn = globalThis.fetch) {
   const response = await fetchFn(path);
-  if (response.status !== 200) await refuse(response);
+  if (response.status !== 200) await rejectWith(response);
   return response.json();
 }
 

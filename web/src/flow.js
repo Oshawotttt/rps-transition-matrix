@@ -3,13 +3,9 @@
 
 import { newGame, playRound } from "./game.js";
 
-function freezeFlow(flow) {
-  return Object.freeze(flow);
-}
-
 // A new match in phase "think", before round 1.
 export function newFlow(bot, bestOf) {
-  return freezeFlow({ game: newGame(bot, bestOf), phase: "think", pick: null, thrown: null });
+  return Object.freeze({ game: newGame(bot, bestOf), phase: "think", pick: null, thrown: null });
 }
 
 // An Error whose `code` is "move", "phase" or "wrong", so callers can tell bad input from a bad moment.
@@ -28,9 +24,9 @@ function checkPhase(flow, ok, action) {
 // Plays the round once both the pick and the throw are in; otherwise keeps waiting.
 function settle(flow) {
   if (flow.pick !== null && flow.thrown !== null) {
-    return freezeFlow({ ...flow, game: playRound(flow.game, flow.thrown, flow.pick), phase: "result" });
+    return Object.freeze({ ...flow, game: playRound(flow.game, flow.thrown, flow.pick), phase: "result" });
   }
-  return freezeFlow({ ...flow, phase: flow.pick !== null ? "reveal" : "think" });
+  return Object.freeze({ ...flow, phase: flow.pick !== null ? "reveal" : "think" });
 }
 
 // The host picks the bot's move; only the recommended move is accepted.
@@ -53,7 +49,7 @@ export function throwMove(flow, move) {
 // After a result, the next round starts fresh; refused once the match has a winner.
 export function nextRound(flow) {
   checkPhase(flow, flow.phase === "result" && flow.game.winner === null, "start the next round");
-  return freezeFlow({ ...flow, phase: "think", pick: null, thrown: null });
+  return Object.freeze({ ...flow, phase: "think", pick: null, thrown: null });
 }
 
 // What the projector gets: the whole game but the bot JSON, and only whether the guest has thrown.

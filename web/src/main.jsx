@@ -16,7 +16,13 @@ import Start from "./Start.jsx";
 
 const NO_SERVER = "The app needs its server: from web/, run npm run dev on one laptop, or npm run host to play on two.";
 const REFUSED = "Hosting works only on the laptop running the server. On this laptop, choose Join as guest.";
-const CLOSED = "The server closed the connection. Reload the page to connect again.";
+const STREAM_CLOSED = "The server closed the connection. Reload the page to connect again.";
+
+// Asks the host-only bot list, since EventSource hides the HTTP status: resolves with null when hosting
+// works here, else with the message to show (a refused host, or no server).
+function probeHost() {
+  return getJson("/api/host/bots").then(() => null, (e) => (e.status === 403 ? REFUSED : NO_SERVER));
+}
 
 function Status({ title, children }) {
   return <main className="status">{title && <h1>{title}</h1>}{children}</main>;
@@ -34,8 +40,7 @@ function Host({ onLeave }) {
     conn.onStatus = (s) => {
       setStatus(s);
       if (s !== "closed") return;
-      // EventSource hides the HTTP status, so ask again to tell a refused host from a missing server
-      getJson("/api/host/bots").then(() => setError(CLOSED), (e) => (e.status === 403 ? onLeave(REFUSED) : setError(NO_SERVER)));
+      probeHost().then((why) => (why === REFUSED ? onLeave(REFUSED) : setError(why ?? STREAM_CLOSED)));
     };
     return () => conn.close();
   }, [onLeave]);
@@ -71,14 +76,10 @@ function App() {
   async function onHost() {
     setBusy(true);
     setMessage(null);
-    try {
-      await getJson("/api/host/bots");
-      choose("host");
-    } catch (e) {
-      setMessage(e.status === 403 ? REFUSED : NO_SERVER);
-    } finally {
-      setBusy(false);
-    }
+    const why = await probeHost();
+    setBusy(false);
+    if (why) setMessage(why);
+    else choose("host");
   }
 
   if (role === "host") return <Host onLeave={onLeave} />;

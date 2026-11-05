@@ -12,6 +12,7 @@ const DEFAULT_BOTS_DIR = fileURLToPath(new URL("../public/bots/", import.meta.ur
 const DEFAULT_BOT = "bot_rps_human_combined.json";
 const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
 const PING_MS = 20000;
+const NOT_HOST = "hosting works only on the laptop running the server";
 // a plain file name ending in .json: no folder separators, and ".." is refused separately
 const BOT_NAME = /^[A-Za-z0-9_.-]+\.json$/;
 // flow.js error codes: a bad move is bad input, the others a call at the wrong moment
@@ -49,7 +50,7 @@ async function readBody(req) {
 }
 
 // Runs one flow.js call, turning its error codes into HTTP statuses.
-function step(fn) {
+function applyFlow(fn) {
   try {
     return fn();
   } catch (e) {
@@ -66,13 +67,18 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
   // open events streams: {res, role, seat}
   const streams = new Set();
 
+  // the seat as anyone but its holder sees it
+  function seatSeen() {
+    return seat === null ? "empty" : "taken";
+  }
+
   function stateFor(s) {
     if (s.role === "host") {
       const playerOnline = seat !== null && [...streams].some((o) => o.role === "player" && o.seat === seat);
-      return { role: "host", bot: botName, flow: hostView(flow), seat: seat === null ? "empty" : "taken", playerOnline };
+      return { role: "host", bot: botName, flow: hostView(flow), seat: seatSeen(), playerOnline };
     }
     if (seat !== null && s.seat === seat) return { role: "player", seat: "mine", view: playerView(flow) };
-    return { role: "player", seat: seat === null ? "empty" : "taken", view: null };
+    return { role: "player", seat: seatSeen(), view: null };
   }
 
   function send(s) {
@@ -92,7 +98,7 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
   function events(req, res, query) {
     const role = query.get("role");
     if (role !== "host" && role !== "player") return fail(res, 400, "role must be host or player");
-    if (role === "host" && !isLocal(req)) return fail(res, 403, "hosting works only on the laptop running the server");
+    if (role === "host" && !isLocal(req)) return fail(res, 403, NOT_HOST);
     const id = query.get("seat");
     if (role === "player" && !id) return fail(res, 400, "a player stream needs a seat id");
     res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
@@ -112,6 +118,10 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
     for (const s of streams) s.res.write(": ping\n\n");
   }, PING_MS);
 
+  function requireHost(req) {
+    if (!isLocal(req)) throw new HttpError(403, NOT_HOST);
+  }
+
   function loadNamed(name) {
     if (typeof name !== "string" || !BOT_NAME.test(name) || name.includes("..")) {
       throw new HttpError(400, `bad bot file name: ${name}`);
@@ -124,21 +134,21 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
     }
   }
 
-  function holder(body) {
+  function seatIdOf(body) {
     if (typeof body.seat !== "string" || body.seat === "") throw new HttpError(400, "a seat id is needed");
     return body.seat;
   }
 
   function mustHold(body) {
-    const id = holder(body);
+    const id = seatIdOf(body);
     if (id !== seat) throw new HttpError(403, "this seat id does not hold the seat");
   }
 
   // POST routes: [who, handler(body)]; a handler changes the match or the seat, then everyone gets the new state
   const posts = {
-    "/api/host/pick": ["host", (body) => { flow = step(() => pickMove(flow, body.move)); }],
-    "/api/host/throw": ["host", (body) => { flow = step(() => throwMove(flow, body.move)); }],
-    "/api/host/next": ["host", () => { flow = step(() => nextRound(flow)); }],
+    "/api/host/pick": ["host", (body) => { flow = applyFlow(() => pickMove(flow, body.move)); }],
+    "/api/host/throw": ["host", (body) => { flow = applyFlow(() => throwMove(flow, body.move)); }],
+    "/api/host/next": ["host", () => { flow = applyFlow(() => nextRound(flow)); }],
     "/api/host/new": ["host", (body) => {
       if (body.bestOf !== 3 && body.bestOf !== 5) throw new HttpError(400, `bestOf must be 3 or 5, got ${body.bestOf}`);
       const name = body.bot ?? botName;
@@ -148,7 +158,7 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
     }],
     "/api/host/free-seat": ["host", () => { seat = null; }],
     "/api/player/claim": ["player", (body) => {
-      const id = holder(body);
+      const id = seatIdOf(body);
       if (seat === null) seat = id;
       else if (seat !== id) throw new HttpError(403, "someone else holds the seat");
     }],
@@ -158,7 +168,7 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
     }],
     "/api/player/throw": ["player", (body) => {
       mustHold(body);
-      flow = step(() => throwMove(flow, body.move));
+      flow = applyFlow(() => throwMove(flow, body.move));
     }],
   };
 
@@ -166,7 +176,7 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
     const path = url.pathname;
     if (req.method === "GET" && path === "/api/events") return events(req, res, url.searchParams);
     if (req.method === "GET" && path === "/api/host/bots") {
-      if (!isLocal(req)) throw new HttpError(403, "host paths work only on the laptop running the server");
+      requireHost(req);
       const files = readdirSync(botsDir).filter((f) => f.endsWith(".json")).sort();
       res.setHeader("Content-Type", "application/json");
       return res.end(JSON.stringify({ files }));
@@ -174,7 +184,7 @@ export function createRelay({ botsDir = DEFAULT_BOTS_DIR, isLocal = isLoopback }
     const entry = req.method === "POST" && Object.hasOwn(posts, path) && posts[path];
     if (!entry) throw new HttpError(404, `no such path: ${req.method} ${path}`);
     const [who, handler] = entry;
-    if (who === "host" && !isLocal(req)) throw new HttpError(403, "host paths work only on the laptop running the server");
+    if (who === "host") requireHost(req);
     handler(await readBody(req));
     res.statusCode = 204;
     res.end();
