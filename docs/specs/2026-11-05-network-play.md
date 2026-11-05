@@ -252,6 +252,7 @@ Responses: `204` on success. Errors return JSON `{error: <message>}`: `400` bad 
   - Decision made: the score reads from the guest's side (`tally.win` is the guest's, `tally.lose` the bot's). Goes in `PRODUCT.md` with the guest's view.
   - Decision made: the guest styles go at the end of `web/src/projector.css` (one stylesheet), not a new `player.css`. No doc needed: the file holds them under a comment.
   - Decision made: a closed guest stream shows a message naming `npm run host`; while it retries a "Reconnecting" banner shows. Goes in `docs/ARCHITECTURE.md`.
+  - Decision made (code review): a tab whose seat the host freed does not claim it again on its own; it shows "The host freed your seat" and a "Take the seat again" button, so Free the seat hands the seat to the next guest even while the freed tab stays open. Goes in `docs/ARCHITECTURE.md` and `PRODUCT.md`.
 
 ## Human checks
 

@@ -19,6 +19,9 @@ export default function Player({ onLeave }) {
   // or the "empty" event that leaving causes would take the seat straight back
   const claimed = useRef(false);
   const leaving = useRef(false);
+  // the host freed this tab's seat: it waits for "Take the seat again" instead of claiming it straight back
+  const held = useRef(false);
+  const [freed, setFreed] = useState(false);
 
   useEffect(() => {
     const conn = connect(`/api/events?role=player&seat=${encodeURIComponent(id)}`, setState);
@@ -27,14 +30,23 @@ export default function Player({ onLeave }) {
   }, [id]);
 
   useEffect(() => {
+    if (state?.seat === "mine") {
+      held.current = true;
+      setFreed(false);
+    }
     if (state?.seat !== "empty") {
       claimed.current = false;
       return;
     }
-    if (claimed.current || leaving.current) return;
+    if (held.current) {
+      held.current = false;
+      setFreed(true);
+      return;
+    }
+    if (claimed.current || leaving.current || freed) return;
     claimed.current = true;
     post("/api/player/claim", { seat: id }).catch((e) => setFailed(e.message));
-  }, [state, id]);
+  }, [state, id, freed]);
 
   function send(path, body) {
     setFailed(null);
@@ -51,7 +63,14 @@ export default function Player({ onLeave }) {
   if (status === "closed") body = <p className="g-note">{NO_SERVER}</p>;
   else if (!state) body = <p className="g-note">Connecting to the host…</p>;
   else if (state.seat === "taken") body = <p className="g-note">Someone else is playing. You get the seat when they leave or the host frees it.</p>;
-  else if (state.seat === "empty") body = <p className="g-note">Taking the seat…</p>;
+  else if (state.seat === "empty" && freed) {
+    body = (
+      <div className="g-note">
+        <p>The host freed your seat.</p>
+        <p><button className="ghost" onClick={() => send("/api/player/claim", {})}>Take the seat again</button></p>
+      </div>
+    );
+  } else if (state.seat === "empty") body = <p className="g-note">Taking the seat…</p>;
   else body = <Seat view={state.view} onThrow={(move) => send("/api/player/throw", { move })} />;
 
   return (
