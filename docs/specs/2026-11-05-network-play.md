@@ -211,14 +211,21 @@ Responses: `204` on success. Errors return JSON `{error: <message>}`: `400` bad 
   - When the events stream drops, the screen shows a "Reconnecting" banner; `EventSource` reconnects on its own. Doc delta.
   - No offline mode: without the server the page shows an error naming `npm run dev` / `npm run host`. Doc delta.
 - **Acceptance criteria:**
-  - [ ] `connect` calls `onState` with the parsed data of each `state` event and reports open and error to its caller (`web/test/net.test.js`, fake `EventSource`).
-  - [ ] `post` sends JSON to the path, resolves on `204`, and rejects with the server's `error` message and `status` on any other status (`net.test.js`, fake `fetch`).
-  - [ ] `chooseRole` stores `"host"` or `"player"`, `savedRole` reads it back, and an unknown stored value reads as `null` (`net.test.js`, fake storage).
-  - [ ] `npm run build` (from `web/`) succeeds.
-  - [ ] The full suite passes: `node --test "web/test/*.test.js"`.
+  - [x] `connect` calls `onState` with the parsed data of each `state` event and reports open and error to its caller (`web/test/net.test.js`, fake `EventSource`).
+  - [x] `post` sends JSON to the path, resolves on `204`, and rejects with the server's `error` message and `status` on any other status (`net.test.js`, fake `fetch`).
+  - [x] `chooseRole` stores `"host"` or `"player"`, `savedRole` reads it back, and an unknown stored value reads as `null` (`net.test.js`, fake storage).
+  - [x] `npm run build` (from `web/`) succeeds.
+  - [x] The full suite passes: `node --test "web/test/*.test.js"`.
 - **Doc deltas:**
   - `docs/ARCHITECTURE.md`: `web/src/net.js` and `web/src/Start.jsx` in Modules; the start screen picks the role and the tab remembers it; `main.jsx` loads the bot named by the server; the projector reads the match from the server and keeps only its tabs, wrong-pick shake and win overlay locally; "Not included": no offline mode without the server.
   - `README.md`: "Projector view": choose Host on the start screen; the host picks the bot from a list; remove `?bot=`; the fallback buttons for entering the friend's move.
+  - Decision made: `connect` returns `{onStatus, close}`; the caller sets `onStatus` to hear `"open"`, `"reconnecting"` (EventSource retries) or `"closed"` (`readyState` 2, it gave up). Goes in `docs/ARCHITECTURE.md` (`web/src/net.js` row).
+  - Decision made: `chooseRole(storage, role)` takes the role as a second argument; `null` forgets it (Leave) and any other value throws. Key `rps.role`. Goes in `docs/ARCHITECTURE.md`.
+  - Decision made: `net.js` also exports `getJson(path, fetchFn)` (rejects like `post` on any status but 200), used for `GET /api/host/bots`. Goes in `docs/ARCHITECTURE.md`; tested in `web/test/net.test.js`.
+  - Decision made: EventSource hides the HTTP status, so Host first probes `GET /api/host/bots`: `403` shows the hosting-only-on-the-server-laptop message, any other failure shows the error naming `npm run dev` / `npm run host`; a closed host stream probes again the same way. Goes in `docs/ARCHITECTURE.md`.
+  - Decision made: the guest status, Free the seat, the bot picker and Leave sit in a strip between the scene and the tab bar, since the tab bar is full. No doc needed: layout only.
+  - Decision made: until the guest screen exists, Join as guest shows a placeholder with Back. No doc needed: replaced by the guest screen.
+  - Decision made: a failed host `POST` shows its error in a banner under the strip. Goes in `docs/ARCHITECTURE.md`.
 
 ### S4: Guest screen
 

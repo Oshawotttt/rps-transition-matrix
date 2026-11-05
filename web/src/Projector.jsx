@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { newGame, playRound } from "./game.js";
+import { getJson, post } from "./net.js";
 import RoundReport from "./RoundReport.jsx";
 import LookAhead from "./LookAhead.jsx";
 import { LongRun, Tally } from "./Panels.jsx";
@@ -8,14 +8,24 @@ import WinScreen from "./WinScreen.jsx";
 
 const TABS = [["round", "This round"], ["long", "Long run"], ["tally", "Tally"], ["ahead", "Look ahead"]];
 
-// Each round: the class works through the steps, the presenter picks our move ("think"),
-// enters the friend's move ("reveal"), and sees the result until the next round ("result").
-export default function Projector({ bot }) {
-  const [game, setGame] = useState(() => newGame(bot, 3));
-  const [phase, setPhase] = useState("think");
-  const [pick, setPick] = useState(null);
+// What the projector says about the guest: online or not, and whether they have thrown, never which move.
+function guestStatus(server) {
+  if (server.seat === "empty") return ["off", "No guest yet"];
+  if (!server.playerOnline) return ["off", "Guest offline"];
+  if (server.flow.thrown) return ["on", "Guest has thrown"];
+  return ["on", "Guest online"];
+}
+
+// Each round: the class works through the steps, the host picks our move ("think"); the guest throws
+// before or after the pick; the round plays once both are in ("result") and shows until Next.
+// The match lives on the server; this screen keeps only its tabs, the wrong-pick shake and the win overlay.
+export default function Projector({ bot, server, status, onLeave }) {
+  const { phase, pick, thrown } = server.flow;
+  const game = { ...server.flow.game, bot };
   const [wrong, setWrong] = useState(null);
   const [tab, setTab] = useState("round");
+  const [bots, setBots] = useState([server.bot]);
+  const [failed, setFailed] = useState(null);
   // the win screen opens a moment after the final reveal, so the last cards register first
   const [won, setWon] = useState(false);
   const name = bot.opponent ?? "Your friend";
@@ -28,45 +38,56 @@ export default function Projector({ bot }) {
   const last = game.history[game.history.length - 1];
   const botWins = game.tally.lose;
   const friendWins = game.tally.win;
-
-  function restart(bestOf = game.bestOf) {
-    setGame(newGame(bot, bestOf));
-    setPhase("think");
-    setPick(null);
-    setWrong(null);
-    setWon(false);
-    setTab("round");
-  }
+  const [guestClass, guestText] = guestStatus(server);
 
   useEffect(() => {
-    if (!game.winner) return undefined;
+    getJson("/api/host/bots").then(({ files }) => setBots(files), (e) => setFailed(e.message));
+  }, []);
+
+  // a round's wrong pick is forgotten once the round changes
+  useEffect(() => setWrong(null), [game.round]);
+
+  useEffect(() => {
+    if (!game.winner) {
+      setWon(false);
+      return undefined;
+    }
     const timer = setTimeout(() => setWon(true), 1400);
     return () => clearTimeout(timer);
   }, [game.winner]);
 
   const onMain = useCallback(() => setWon(false), []);
 
+  // Every match action goes to the server; its state event redraws the screen.
+  function send(path, body = {}) {
+    setFailed(null);
+    post(path, body).catch((e) => setFailed(e.message));
+  }
+
+  function restart(bestOf = game.bestOf, botName = server.bot) {
+    send("/api/host/new", { bestOf, bot: botName });
+    setWrong(null);
+    setWon(false);
+    setTab("round");
+  }
+
   function onPick(move) {
+    // checked here too, so the shake is immediate; the server still refuses a wrong pick
     if (move !== game.decision.move) {
       setWrong((w) => ({ move, n: (w?.n ?? 0) + 1 }));
       return;
     }
     setWrong(null);
-    setPick(move);
-    setPhase("reveal");
+    send("/api/host/pick", { move });
   }
 
   function onFriend(move) {
-    setGame(playRound(game, move, pick));
-    setPhase("result");
+    send("/api/host/throw", { move });
   }
 
   function onNext() {
     if (game.winner) setWon(true);
-    else {
-      setPhase("think");
-      setPick(null);
-    }
+    else send("/api/host/next");
     window.scrollTo(0, 0);
   }
 
@@ -102,6 +123,19 @@ export default function Projector({ bot }) {
         </div>
       </div></header>
 
+      <div className="host"><div className="wrap">
+        <span className={`guest ${guestClass}`}><i aria-hidden="true" />{guestText}</span>
+        <button className="ghost" disabled={server.seat === "empty"} onClick={() => send("/api/host/free-seat")}>Free the seat</button>
+        <label className="pickbot">Bot
+          <select value={server.bot} onChange={(e) => restart(game.bestOf, e.target.value)}>
+            {bots.map((f) => <option key={f} value={f}>{f}</option>)}
+          </select>
+        </label>
+        <button className="ghost leave" onClick={onLeave}>Leave</button>
+      </div></div>
+      {status === "reconnecting" && <p className="banner" role="status">Reconnecting to the server…</p>}
+      {failed && <p className="banner bad" role="alert">{failed}</p>}
+
       <nav className="bar"><div className="wrap" role="tablist" aria-label="Panels">
         {TABS.map(([id, label]) => (
           <button key={id} className="tab" role="tab" id={`tab-${id}`} aria-controls={`p-${id}`} aria-selected={tab === id} onClick={() => setTab(id)}>{label}</button>
@@ -119,7 +153,7 @@ export default function Projector({ bot }) {
       <main className="wrap">
         <section className="panel" id={`p-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
           {tab === "round" && (
-            <RoundReport bot={bot} {...view} phase={phase} pick={pick} wrong={wrong} onPick={onPick} onFriend={onFriend}
+            <RoundReport bot={bot} {...view} phase={phase} pick={pick} thrown={thrown} wrong={wrong} onPick={onPick} onFriend={onFriend}
               record={record} winner={game.winner} target={game.target} tally={game.tally} onNext={onNext} name={name} />
           )}
           {tab === "long" && <LongRun bot={bot} />}

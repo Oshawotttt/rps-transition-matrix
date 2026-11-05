@@ -135,7 +135,7 @@ function Result({ record, winner, tally, onNext, name }) {
   );
 }
 
-function Choose({ bot, decision, phase, pick, wrong, onPick, onFriend, record, winner, tally, onNext, name }) {
+function Choose({ bot, decision, phase, pick, thrown, wrong, onPick, onFriend, record, winner, tally, onNext, name }) {
   const { moves } = bot;
   const chosen = phase !== "think";
   return (
@@ -157,9 +157,12 @@ function Choose({ bot, decision, phase, pick, wrong, onPick, onFriend, record, w
       {chosen && decision.move !== decision.counter_move && (
         <p className="flag">Note: countering their likeliest move would mean playing {NAME[decision.counter_move]}.</p>
       )}
-      {phase === "reveal" && (
+      {phase === "think" && thrown && <p className="wait">The guest has thrown. The round plays as soon as we pick.</p>}
+      {/* the fallback for entering the guest's move here, only while nothing has been thrown */}
+      {phase === "reveal" && !thrown && (
         <div className="friend">
-          <h3>What did {bot.opponent ?? "your friend"} throw?</h3>
+          <p className="wait">Waiting for the guest's throw.</p>
+          <h3>Or enter it here: what did {bot.opponent ?? "your friend"} throw?</h3>
           <div className="opts">
             {moves.map((m) => <button key={m} className="mv sm" onClick={() => onFriend(m)}><MoveIcon move={m} />{NAME[m]}</button>)}
           </div>
