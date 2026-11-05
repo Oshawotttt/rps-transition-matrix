@@ -37,6 +37,32 @@ export function Mat({ rows, format = fix, col = -1 }) {
   );
 }
 
+// A matrix in square brackets with column labels across the top and row labels down the side, in one grid so labels line up.
+// `col` shades one column; `cellClass(v, i, j)` styles single entries; `from`/`to` name the two axes.
+export function LMat({ rows, rowLabels, colLabels, format = fix, cellClass, col = -1, from, to, label }) {
+  const m = rows.length, n = rows[0].length;
+  return (
+    <div className="lm" role="table" aria-label={label}
+      style={{ gridTemplateColumns: `auto auto 12px repeat(${n}, minmax(4.4ch, auto)) 12px`, gridTemplateRows: `auto 6px repeat(${m}, auto) 6px` }}>
+      {from && <span className="lm-from">{from}</span>}
+      {to && <span className="lm-to" style={{ gridRow: `3 / ${m + 3}` }}>{to}</span>}
+      {col >= 0 && <span className="lm-band" aria-hidden="true" style={{ gridColumn: col + 4, gridRow: `1 / ${m + 4}` }} />}
+      <span className="lm-brk" aria-hidden="true" style={{ gridColumn: `3 / ${n + 5}`, gridRow: `2 / ${m + 4}` }} />
+      <div className="lm-row" role="row">
+        {colLabels.map((c, j) => <span key={j} className={`lm-col${j === col ? " on" : ""}`} role="columnheader" style={{ gridColumn: j + 4 }}>{c}</span>)}
+      </div>
+      {rows.map((row, i) => (
+        <div className="lm-row" role="row" key={i}>
+          <span className="lm-lbl" role="rowheader" style={{ gridRow: i + 3 }}>{rowLabels[i]}</span>
+          {row.map((v, j) => (
+            <span key={j} role="cell" style={{ gridRow: i + 3, gridColumn: j + 4 }} className={cellClass?.(v, i, j)}>{format(v)}</span>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function MoveIcon({ move, className = "" }) {
   return <svg className={`ic m${move} ${className}`} aria-hidden="true"><use href={`#m${move}`} /></svg>;
 }

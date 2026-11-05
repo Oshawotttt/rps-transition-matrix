@@ -44,11 +44,21 @@ def _floats(a: np.ndarray) -> list:
     return np.asarray(a, dtype=float).tolist()
 
 
+def _complex(a: np.ndarray | None) -> list | None:
+    """A complex vector as a list of [re, im] pairs, or a complex matrix's columns as lists of pairs; None stays None."""
+    if a is None:
+        return None
+    if a.ndim == 2:
+        return [_complex(a[:, k]) for k in range(a.shape[1])]
+    return [[float(v.real), float(v.imag)] for v in a]
+
+
 def _chain_dict(chain: SquareTransitionMatrix) -> dict:
     """The JSON-safe numbers of a square chain; stationary is None when it is not unique."""
     unique = chain.eigenvalue_one_multiplicity == 1
     return {"P": _floats(chain.P),
-            "eigenvalues": [[float(v.real), float(v.imag)] for v in chain.eigenvalues],
+            "eigenvalues": _complex(chain.eigenvalues),
+            "eigenvectors": _complex(chain.eigenvectors),
             "moduli": _floats(chain.moduli),
             "eigenvalue_one_multiplicity": int(chain.eigenvalue_one_multiplicity),
             "has_unit_cycle": bool(chain.has_unit_cycle),
@@ -131,7 +141,11 @@ class Bot:
         look_ahead = {}
         for j, s in enumerate(TOKENS):
             rows = match.look_ahead(np.eye(len(TOKENS))[j])
-            look_ahead[s] = {"rows": _floats(rows), "stopped_at": len(rows) - 1}
+            look_ahead[s] = {"rows": _floats(rows), "stopped_at": len(rows) - 1,
+                             "coefficients": _complex(match.coefficients(rows[0])),
+                             # the decision if the state t rounds on were only known as the distribution row t
+                             "decisions": [_decide(self.payoff, None, row, self.outcome.predict(row), "look_ahead").to_dict()
+                                           for row in rows]}
         return {
             "opponent": self.name,
             "tokens": TOKENS,

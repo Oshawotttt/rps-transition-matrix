@@ -186,7 +186,7 @@ def test_opening_cached():
 
 
 DECISION_KEYS = {"state", "x", "q", "scores", "move", "source", "counter_move", "splits", "expected_score"}
-CHAIN_KEYS = {"P", "eigenvalues", "moduli", "eigenvalue_one_multiplicity", "has_unit_cycle", "rounds_to_fade",
+CHAIN_KEYS = {"P", "eigenvalues", "eigenvectors", "moduli", "eigenvalue_one_multiplicity", "has_unit_cycle", "rounds_to_fade",
               "stationary", "closed_groups", "transient_states"}
 MATCH_KEYS = CHAIN_KEYS | {"outcome_rates", "edge", "edge_check", "group_stationary", "group_outcome_rates"}
 
@@ -247,9 +247,16 @@ def test_bot_to_dict():
         x = np.zeros(9)
         x[j] = 1
         entry = out["look_ahead"][s]
-        assert set(entry) == {"rows", "stopped_at"}
+        assert set(entry) == {"rows", "stopped_at", "coefficients", "decisions"}
+        assert len(entry["decisions"]) == len(entry["rows"])
+        for row, d in zip(entry["rows"], entry["decisions"]):
+            assert set(d) == DECISION_KEYS and d["state"] is None and d["source"] == "look_ahead"
+            np.testing.assert_allclose(d["q"], bot.outcome.P @ np.array(row), rtol=0, atol=1e-12)
+            assert d["move"] == bot.payoff.best_move(np.array(d["q"]))
+        assert entry["decisions"][0]["move"] == out["decisions"][s]["move"]
         np.testing.assert_array_equal(entry["rows"], bot.match.look_ahead(x))
         assert entry["stopped_at"] == len(entry["rows"]) - 1
+        np.testing.assert_array_equal([complex(re, im) for re, im in entry["coefficients"]], bot.match.coefficients(x))
 
 
 def test_bot_to_dict_json_safe():
@@ -262,6 +269,8 @@ def test_bot_to_dict_json_safe():
         eigenvalues = getattr(bot, key).eigenvalues
         assert all(len(pair) == 2 for pair in loaded[key]["eigenvalues"])
         np.testing.assert_array_equal([complex(re, im) for re, im in loaded[key]["eigenvalues"]], eigenvalues)
+        vectors = getattr(bot, key).eigenvectors
+        np.testing.assert_array_equal([[complex(re, im) for re, im in v] for v in loaded[key]["eigenvectors"]], vectors.T)
 
 
 def test_bot_to_dict_reducible():
@@ -336,5 +345,5 @@ def test_web_fixture_is_current():
 
 @pytest.mark.skipif(not COMBINED_COUNTS.exists(), reason=f"{COMBINED_COUNTS} is missing (data/ is gitignored)")
 def test_default_bot_is_current():
-    expected = exported(Bot(Counts.load(COMBINED_COUNTS), name="rps_human_combined"))
+    expected = exported(Bot(Counts.load(COMBINED_COUNTS), name="Humanity"))
     assert_json_close(json.loads(DEFAULT_BOT.read_text(encoding="utf-8")), expected)

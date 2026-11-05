@@ -2,9 +2,9 @@ import { Card, Fallback, Mat, MoveIcon, NAME, Vec, fix, int, signed } from "./ui
 
 const OUTCOME = { W: "won", L: "lost", T: "tied" };
 
-function Step({ n, title, formula, children }) {
+export function Step({ n, title, formula, open = true, children }) {
   return (
-    <details className="step" open>
+    <details className="step" open={open}>
       <summary>
         <span className="n">{n}</span><h2>{title}<em>{formula}</em></h2>
         <svg className="chev" aria-hidden="true"><use href="#chev" /></svg>
@@ -15,7 +15,7 @@ function Step({ n, title, formula, children }) {
 }
 
 // Bar chart of q: their chance of each move.
-function QBars({ q, moves }) {
+export function QBars({ q, moves }) {
   const top = Math.max(...q);
   return (
     <div className="figs"><div>
@@ -65,26 +65,57 @@ function Predict({ bot, decision, state, round }) {
   );
 }
 
-function Score({ bot, decision }) {
+// Bar heights share one scale from zero, so the win and loss bars keep their height when they move into the gap column.
+const BAR = 150;
+const FILL = { 1: "var(--w)", 0: "var(--t)", "-1": "var(--l)" };
+const SIGN = { 1: "pos", 0: "zer", "-1": "neg" };
+
+// A's row recolours q: each row of the grid is q painted by one row of A, then its win and loss bars side by side.
+// The band between their tops is that row of A q. `pick` highlights the move we chose.
+function ScoreGrid({ bot, decision, pick }) {
   const { moves } = bot;
+  const A = bot.payoff.A;
+  const { q, splits, scores } = decision;
+  const top = Math.max(...q);
+  const h = (v) => `${(v / top) * BAR}px`;
   return (
-    <Step n={2} title="Score" formula="A q">
+    <div className="sg" role="img" aria-label={moves.map((m, i) => `Our ${NAME[m]}: win ${fix(splits[i][0])}, lose ${fix(splits[i][2])}, score ${signed(scores[i])}`).join(". ")}>
+      <span />
+      {moves.map((m, j) => <span key={m} className="sg-hd"><MoveIcon move={m} />Their {NAME[m]}<small>q = {fix(q[j])}</small></span>)}
+      <span /><span className="sg-hd">win, lose</span><span className="sg-hd sg-r">A q</span>
+      {A.map((row, i) => {
+        const [win, , lose] = splits[i];
+        const lo = Math.min(win, lose);
+        return (
+          <div key={moves[i]} className={`sg-row${pick === moves[i] ? " on" : ""}`}>
+            <span className="sg-who"><MoveIcon move={moves[i]} /> Our {NAME[moves[i]]}</span>
+            {row.map((a, j) => (
+              <span key={j} className="sg-cell">
+                <span className={`sg-a ${SIGN[a]}`}>{a > 0 ? `+${a}` : int(a)}</span>
+                <i className={a === 0 ? "t" : undefined} style={{ height: h(q[j]), background: FILL[a] }}>{fix(q[j])}</i>
+              </span>
+            ))}
+            <span className="sg-ar" aria-hidden="true">→</span>
+            <span className="sg-gap">
+              <i style={{ height: h(win), background: "var(--w)" }}>{fix(win)}</i>
+              <i style={{ height: h(lose), background: "var(--l)" }}>{fix(lose)}</i>
+              <span className="sg-band" style={{ bottom: h(lo), height: h(Math.abs(win - lose)) }} />
+            </span>
+            <span className={`sg-score ${SIGN[Math.sign(Math.round(scores[i] * 1000))]}`}>{signed(scores[i])}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function Score({ bot, decision, open, pick }) {
+  return (
+    <Step n={2} title="Score" formula="A q" open={open}>
       <p>A holds our score for each pair of moves: rows are our move, columns are theirs. Multiplying by q gives each of our moves' expected points: its chance of winning minus its chance of losing.</p>
       <div className="eq"><span className="lab">A q =</span><Mat rows={bot.payoff.A} format={int} /><Vec values={decision.q} /> = <Vec values={decision.scores} format={signed} /></div>
-      <div className="stk">
-        {decision.splits.map(([win, tie, lose], i) => (
-          <div className="st" key={moves[i]}>
-            <span><MoveIcon move={moves[i]} /> Our {NAME[moves[i]]}</span>
-            <span className="sb">
-              <i style={{ width: `${win * 100}%`, background: "var(--w)" }}>{fix(win)}</i>
-              <i className="t" style={{ width: `${tie * 100}%`, background: "var(--t)" }}>{fix(tie)}</i>
-              <i style={{ width: `${lose * 100}%`, background: "var(--l)" }}>{fix(lose)}</i>
-            </span>
-            <span>{signed(decision.scores[i])}</span>
-          </div>
-        ))}
-      </div>
-      <div className="key"><span><i style={{ background: "var(--w)" }} />We win</span><span><i style={{ background: "var(--t)" }} />Tie</span><span><i style={{ background: "var(--l)" }} />We lose</span></div>
+      <ScoreGrid bot={bot} decision={decision} pick={pick} />
+      <div className="key"><span><i style={{ background: "var(--w)" }} />We win (+1)</span><span><i style={{ background: "var(--t)" }} />Tie (0)</span><span><i style={{ background: "var(--l)" }} />We lose (−1)</span><span><i className="band" />Gap: A q</span></div>
     </Step>
   );
 }

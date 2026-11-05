@@ -40,7 +40,7 @@ web/src/game.js: loadBot → validateBot → newGame → playRound (browser; the
 | `src/rps_markov/payoff.py` | `PayoffMatrix`: the fixed 3 × 3 payoff A and the bot's best move. |
 | `src/rps_markov/bot.py` | `Bot` (holds the four matrices from one `Counts`; `get_move`, `opening`, `to_dict`), the `Decision` record, and the CLI that writes the bot JSON. All panel numbers are computed here and in `markov.py`; the frontend only reads them. |
 | `web/src/game.js` | Game logic in JavaScript (a plain ES module): loads and validates the bot JSON, plays a best-of-3 or best-of-5 match, keeps history, tally, running totals and the winner. Tests are in `web/test/`. |
-| `web/src/main.jsx`, `Projector.jsx`, `RoundReport.jsx`, `Panels.jsx`, `ui.jsx`, `projector.css` | The projector view, a React app built with Vite (one `web/package.json`). `main.jsx` loads the bot with `loadBot`; `Projector.jsx` keeps the `Game` in React state and holds the scene, tabs and round flow; `RoundReport.jsx` is the Predict, Score, Choose report; `Panels.jsx` holds Long run, Tally, Policy and Look ahead; `ui.jsx` holds notation, cards, characters and the fallback banner. |
+| `web/src/main.jsx`, `Projector.jsx`, `RoundReport.jsx`, `Panels.jsx`, `LookAhead.jsx`, `ui.jsx`, `projector.css` | The projector view, a React app built with Vite (one `web/package.json`). `main.jsx` loads the bot with `loadBot`; `Projector.jsx` keeps the `Game` in React state and holds the scene, tabs and round flow; `RoundReport.jsx` is the Predict, Score, Choose report; `Panels.jsx` holds Long run and Tally; `LookAhead.jsx` holds Look ahead (Mᵗ x as a sum over the eigenvectors, stepped with back and forward); `ui.jsx` holds notation, cards, characters and the fallback banner. |
 
 Signatures and file layouts are in [CONTRACTS.md](CONTRACTS.md); terms in [GLOSSARY.md](../GLOSSARY.md).
 
@@ -75,7 +75,6 @@ Signatures and file layouts are in [CONTRACTS.md](CONTRACTS.md); terms in [GLOSS
 - No match win probability panel (neither the split 9 × 9 nor the absorbing chain).
 - No round-1 prediction from the real first-move distribution u₀.
 - No friend's device screen and no relay server yet: the presenter enters the friend's move on the projector.
-- No look-ahead panel yet: the tab is a placeholder.
 - No API layer: the frontend reads a static JSON file. The only server is the presenter laptop's local one on the room's wifi, which serves the app and relays moves between the two screens (the human's device and the projector).
 - No undo, save or replay of a game.
 - No collection of the friend's rounds, plots or presentation visuals.

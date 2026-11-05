@@ -116,6 +116,37 @@ class SquareTransitionMatrix(TransitionMatrix):
                              "so the steady state is not unique")
         return _eigenvalue_one_vector(*self._eig)
 
+    @cached_property
+    def eigenvectors(self) -> np.ndarray | None:
+        """Eigenvectors as columns, same order as eigenvalues; None when P is not diagonalisable (within 1e-9).
+
+        An eigenvector for eigenvalue 1 is real; when its entries do not sum to 0 it is scaled to sum to 1, so the first
+        is pi when pi is unique. Every other one is scaled to length 1 with its largest entry real and positive, which
+        fixes NumPy's free sign (for eigenvalues other than 1 the entries always sum to 0).
+        """
+        eigenvalues, vectors = self._eig
+        if np.linalg.cond(vectors) > 1 / EIGEN_TOL:
+            return None
+        out = np.empty_like(vectors, dtype=complex)
+        for k, value in enumerate(eigenvalues):
+            v = vectors[:, k].astype(complex)
+            if abs(value - 1) < EIGEN_TOL and abs(np.real(v).sum()) > EIGEN_TOL:
+                v = np.real(v) / np.real(v).sum()
+            else:
+                big = v[np.argmax(np.abs(v))]
+                v = v / np.linalg.norm(v) * (abs(big) / big)
+            out[:, k] = v
+        return out
+
+    def coefficients(self, x: np.ndarray) -> np.ndarray | None:
+        """c with x = sum of c_k v_k over the eigenvectors (columns of eigenvectors); None when there are none.
+
+        Then P^t x = sum of c_k lambda_k^t v_k; c_1 = 1 for any x summing to 1 when pi is unique.
+        """
+        if self.eigenvectors is None:
+            return None
+        return np.linalg.solve(self.eigenvectors, np.asarray(x, dtype=complex))
+
     def look_ahead(self, x: np.ndarray, tol: float = 0.01, max_steps: int = 100) -> np.ndarray:
         """Rows x, P x, P^2 x, ...; stops at the first row whose summed absolute change from the last is below tol, or at max_steps."""
         rows = [np.asarray(x, dtype=float)]

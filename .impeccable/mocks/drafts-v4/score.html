@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Score Drafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Gabarito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #fbfbf8; --ink: #20232b; --ink2: #4a4f5c; --wall: #f1efe8; --rim: #7f9a7b;
+  --r: #c24b3a; --p: #3462ad; --s: #d39b22; --w: #2f7b55; --t: #d8d5cc; --l: #c24b3a; --hi: #fff3c9; --faint: #a19e96;
+  --display: "Gabarito", system-ui, sans-serif; --text: "Atkinson Hyperlegible", system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--wall); font-family: var(--text); color: var(--ink); font-variant-numeric: tabular-nums; font-size: 22px; }
+::selection { background: var(--p); color: #fff; }
+:focus-visible { outline: 3px solid var(--p); outline-offset: 3px; }
+button { font: inherit; color: inherit; }
+
+.board { max-width: 1440px; margin: 0 auto; padding: 48px 56px 120px; }
+.board > h1 { font: 800 48px/1.05 var(--display); letter-spacing: -.02em; }
+.board > p { font-size: 20px; line-height: 1.5; max-width: 72ch; margin-top: 12px; color: var(--ink2); }
+.ex { display: flex; gap: 4px; padding: 4px; border-radius: 12px; box-shadow: inset 0 0 0 2px var(--t); width: max-content; margin-top: 22px; background: var(--paper); }
+.ex button { height: 42px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; font: 700 18px var(--text); cursor: pointer; }
+.ex button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+.draft { margin-top: 64px; }
+.draft > h2 { font: 800 32px/1.15 var(--display); letter-spacing: -.01em; }
+.draft > h2 b { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: 22px; margin-right: 14px; vertical-align: 4px; }
+.draft > .why { font-size: 19px; line-height: 1.5; max-width: 82ch; margin: 10px 0 18px; color: var(--ink2); }
+.draft > .why strong { color: var(--ink); }
+.sheet { background: var(--paper); border-radius: 16px; padding: 36px 56px 44px 128px; box-shadow: 0 18px 40px -26px rgba(32, 35, 43, .45); display: grid; gap: 26px; }
+
+/* notation, as in the projector */
+.vec, .mat { display: inline-grid; position: relative; padding: 4px 14px; gap: 2px 18px; text-align: right; vertical-align: middle; }
+.vec::before, .vec::after, .mat::before, .mat::after { content: ""; position: absolute; top: 0; bottom: 0; width: 9px; border: 2.5px solid currentColor; }
+.vec::before, .mat::before { left: 0; border-right: 0; }
+.vec::after, .mat::after { right: 0; border-left: 0; }
+.mat { grid-template-columns: repeat(3, auto); }
+.eq { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 24px; }
+.eq .lab { font-weight: 700; }
+.sheet > p { max-width: 68ch; line-height: 1.5; }
+.ic { width: 1em; height: 1em; vertical-align: -.14em; fill: currentColor; }
+.mR { color: var(--r); } .mP { color: var(--p); } .mS { color: var(--s); }
+.key { display: flex; gap: 22px; font-size: 18px; color: var(--ink2); }
+.key i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.cap { font-size: 19px; color: var(--ink2); }
+
+/* 0: now */
+.stk { display: grid; gap: 12px; max-width: 860px; }
+.st { display: grid; grid-template-columns: 200px 1fr 96px; align-items: center; gap: 16px; font: 700 21px var(--text); }
+.st .sb { display: flex; height: 34px; border-radius: 6px; overflow: hidden; }
+.st .sb i { height: 100%; display: grid; place-items: center; font: 700 16px var(--text); font-style: normal; color: #fff; }
+.st .sb i.t { color: var(--ink); }
+.st span:last-child { text-align: right; }
+
+/* shared row label */
+.who { font: 700 22px var(--text); display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.who .ic { width: 30px; height: 30px; }
+.big { font: 800 34px/1 var(--display); text-align: right; letter-spacing: -.01em; }
+.net .big, .wl .big, .dv .big { display: flex; align-items: center; justify-content: flex-end; }
+.big.pos { color: var(--w); } .big.neg { color: var(--l); }
+
+/* 1: net score from zero */
+.net { display: grid; grid-template-columns: 210px minmax(0, 640px) 130px; column-gap: 24px; max-width: 1060px; }
+.net .row { display: contents; }
+.net .who, .net .big, .net .track { padding: 14px 0; }
+.net .row + .row > * { border-top: 2px solid var(--wall); }
+.net .track { position: relative; height: 76px; box-sizing: content-box; }
+.net .zero { position: absolute; top: 0; bottom: 0; left: 50%; width: 2.5px; margin-left: -1.25px; background: var(--ink); z-index: 1; }
+.net .bar { position: absolute; top: 18px; height: 40px; }
+.net .bar.pos { left: 50%; background: var(--w); border-radius: 0 7px 7px 0; }
+.net .bar.neg { right: 50%; background: var(--l); border-radius: 7px 0 0 7px; }
+.net .who { flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; }
+.net .sub { font: 400 17px var(--text); color: var(--ink2); padding-left: 40px; }
+.net .sub b { color: var(--ink); }
+.net .axis { grid-column: 2; position: relative; height: 34px; border-top: 2px solid var(--ink); }
+.net .axis span { position: absolute; top: 6px; transform: translateX(-50%); font-size: 16px; color: var(--ink2); }
+.net .axis span::before { content: ""; position: absolute; left: 50%; top: -14px; width: 2px; height: 8px; background: var(--ink); }
+.net .ends { grid-column: 2; display: flex; justify-content: space-between; font: 700 17px var(--text); color: var(--ink2); margin-top: 2px; }
+
+/* 2: win against loss */
+.wl { display: grid; grid-template-columns: 210px minmax(0, 640px) 130px; column-gap: 24px; row-gap: 0; max-width: 1060px; }
+.wl .row { display: contents; }
+.wl .row > * { padding: 18px 0; }
+.wl .row + .row > * { border-top: 2px solid var(--wall); }
+.wl .pair { position: relative; display: grid; gap: 6px; }
+.wl .ln { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 10px; font-size: 16px; color: var(--ink2); }
+.wl .ln .b { position: relative; height: 30px; }
+.wl .ln .b i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 6px 6px 0; display: flex; align-items: center; padding-left: 10px; font: 700 16px var(--text); font-style: normal; color: #fff; }
+.wl .gap { position: absolute; top: 0; height: 66px; border-left: 2.5px dashed var(--ink); border-right: 2.5px dashed var(--ink); background: color-mix(in srgb, var(--hi) 80%, transparent); }
+.wl .gap b { position: absolute; top: 50%; left: 100%; margin-left: 12px; transform: translateY(-50%); background: var(--ink); color: var(--paper); font: 700 16px var(--text); padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.wl .tie { font-size: 16px; color: var(--ink2); margin-left: 80px; }
+.wl .scale { grid-column: 2; display: flex; justify-content: space-between; margin-left: 80px; font-size: 16px; color: var(--ink2); border-top: 2px solid var(--ink); padding-top: 6px; }
+
+/* 3: the row of A recolours q */
+.ar { display: grid; grid-template-columns: 210px repeat(3, 150px) 40px 220px; column-gap: 18px; align-items: end; max-width: 1060px; }
+.ar .hd { font: 700 18px var(--text); color: var(--ink2); text-align: center; padding-bottom: 8px; }
+.ar .hd .ic { width: 24px; height: 24px; display: block; margin: 0 auto 4px; }
+.ar .hd small { display: block; font-size: 16px; font-weight: 400; }
+.ar .cell { height: 128px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 14px 0 0; border-top: 2px solid var(--wall); }
+.ar .cell i { display: block; width: 84px; border-radius: 7px 7px 0 0; }
+.ar .cell .a { font: 800 20px var(--display); margin-bottom: 6px; }
+.ar .cell .a.pos { color: var(--w); } .ar .cell .a.neg { color: var(--l); } .ar .cell .a.zer { color: var(--faint); }
+.ar .cell.zz i { background: var(--t); }
+.ar .who, .ar .eqs, .ar .sum { align-self: stretch; display: flex; align-items: center; border-top: 2px solid var(--wall); }
+.ar .eqs { justify-content: center; font: 800 30px var(--display); }
+.ar .sum { flex-direction: column; align-items: flex-end; justify-content: center; }
+.ar .sum small { font-size: 16px; color: var(--ink2); margin-top: 6px; white-space: nowrap; }
+.ar .base { grid-column: 2 / 5; border-top: 2px solid var(--ink); }
+
+/* 4: diverging stacked, tie centred */
+.dv { display: grid; grid-template-columns: 210px minmax(0, 700px) 130px; column-gap: 24px; max-width: 1100px; }
+.dv .row { display: contents; }
+.dv .row > * { padding: 12px 0; }
+.dv .trk { position: relative; height: 40px; box-sizing: content-box; }
+.dv .seg { position: absolute; top: 12px; height: 40px; display: grid; place-items: center; font: 700 16px var(--text); color: #fff; }
+.dv .seg.t { color: var(--ink); }
+.dv .seg.lo { border-radius: 7px 0 0 7px; } .dv .seg.wi { border-radius: 0 7px 7px 0; }
+.dv .zero { position: absolute; left: 50%; top: -6px; bottom: -18px; width: 2.5px; margin-left: -1.25px; background: var(--ink); z-index: 0; }
+.dv .seg { z-index: 1; }
+.dv .mid { position: absolute; top: 2px; width: 0; height: 0; border: 9px solid transparent; border-top: 12px solid var(--ink); margin-left: -9px; z-index: 3; }
+.dv .heads { grid-column: 2; display: flex; justify-content: space-between; font: 700 17px var(--text); color: var(--ink2); }
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="mR" viewBox="0 0 48 48"><path d="M8 31c-2-10 6-19 17-19s18 8 16 18c-1 8-9 11-16 11-9 0-16-3-17-10z"/></symbol>
+  <symbol id="mP" viewBox="0 0 48 48"><path d="M11 5h20l9 9v29H11z"/><path d="M31 5v9h9" fill="#fff" opacity=".45"/></symbol>
+  <symbol id="mS" viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"><circle cx="14" cy="35" r="6.5"/><circle cx="34" cy="35" r="6.5"/><path d="M18 30 35 6M30 30 13 6"/></g></symbol>
+</defs></svg>
+
+<main class="board">
+  <h1>Step 2, Score: chart drafts</h1>
+  <p>Every draft sits under the same text and A q equation. Numbers are the pooled bot's. Switch the example: after RW the scores spread out and the bot does not counter the likeliest move; in round 1 they bunch near zero.</p>
+  <div class="ex" role="group" aria-label="Example">
+    <button aria-pressed="true" data-ex="RW">x = RW</button>
+    <button aria-pressed="false" data-ex="pi">Round 1, x = π</button>
+  </div>
+  <div id="drafts"></div>
+</main>
+
+<script>
+const EX = {
+  RW: { q: [0.3516295025728988, 0.3542803680024949, 0.2940901294246063], s: [-0.06019023857788863, 0.05753937314829255, 0.002650865429596083],
+    sp: [[0.2940901294246063, 0.3516295025728988, 0.3542803680024949], [0.3516295025728988, 0.3542803680024949, 0.2940901294246063], [0.3542803680024949, 0.2940901294246063, 0.3516295025728988]] },
+  pi: { q: [0.3558710032812613, 0.3259426795277524, 0.3181863171909864], s: [-0.007756362336766021, 0.03768468609027492, -0.0299283237535089],
+    sp: [[0.3181863171909864, 0.3558710032812613, 0.3259426795277524], [0.3558710032812613, 0.3259426795277524, 0.3181863171909864], [0.3259426795277524, 0.3181863171909864, 0.3558710032812613]] },
+};
+const A = [[0, -1, 1], [1, 0, -1], [-1, 1, 0]];
+const M = ["R", "P", "S"], NAME = { R: "Rock", P: "Paper", S: "Scissors" };
+const fix = (v) => (v < 0 && Math.abs(v) >= 5e-4 ? "−" : "") + Math.abs(v).toFixed(3);
+const sg = (v) => (v >= 5e-4 ? "+" : "") + fix(v);
+const int = (v) => (v < 0 ? `−${-v}` : v > 0 ? `+${v}` : "0");
+const icon = (m) => `<svg class="ic m${m}"><use href="#m${m}"/></svg>`;
+const who = (m) => `<span class="who">${icon(m)} Our ${NAME[m]}</span>`;
+const cls = (v) => (v >= 5e-4 ? "pos" : v <= -5e-4 ? "neg" : "");
+const vec = (vs, f = fix) => `<span class="vec">${vs.map((v) => `<span>${f(v)}</span>`).join("")}</span>`;
+const mat = (rows, f) => `<span class="mat">${rows.flat().map((v) => `<span>${f(v)}</span>`).join("")}</span>`;
+const key = `<div class="key"><span><i style="background:var(--w)"></i>We win</span><span><i style="background:var(--t)"></i>Tie</span><span><i style="background:var(--l)"></i>We lose</span></div>`;
+
+function sheet(e, chart) {
+  return `<div class="sheet">
+    <p>A holds our score for each pair of moves: rows are our move, columns are theirs. Multiplying by q gives each of our moves' expected points: its chance of winning minus its chance of losing.</p>
+    <div class="eq"><span class="lab">A q =</span>${mat(A, (v) => (v < 0 ? `−${-v}` : String(v)))}${vec(e.q)} = ${vec(e.s, sg)}</div>
+    ${chart}</div>`;
+}
+
+const drafts = [
+  { t: "Now: stacked win, tie, loss", why: "For comparison. All three bars are the same length and hold the same three numbers in a different order, so the eye sees three near-identical stripes. The score that decides the move sits only in the text column.",
+    chart: (e) => `<div class="stk">${e.sp.map(([w, t, l], i) => `<div class="st"><span>${icon(M[i])} Our ${NAME[M[i]]}</span><span class="sb">
+      <i style="width:${w * 100}%;background:var(--w)">${fix(w)}</i><i class="t" style="width:${t * 100}%;background:var(--t)">${fix(t)}</i><i style="width:${l * 100}%;background:var(--l)">${fix(l)}</i></span><span>${sg(e.s[i])}</span></div>`).join("")}</div>${key}` },
+
+  { t: "Net score from zero", why: "<strong>Charts the number step 3 picks from.</strong> One bar per move, growing right from zero when win beats loss and left when it doesn't. The axis is zoomed to the scores, so a 0.06 gap fills the width; the subtraction above each bar keeps the win and loss shares visible. Drops the tie share, which scores 0.",
+    chart: (e) => {
+      const lim = Math.max(0.05, Math.ceil(Math.max(...e.s.map(Math.abs)) / 0.05) * 0.05);
+      const ticks = [-lim, -lim / 2, 0, lim / 2, lim];
+      return `<div class="net">${e.sp.map(([w, , l], i) => { const v = e.s[i], pct = (Math.abs(v) / lim) * 50;
+        return `<div class="row"><span class="who"><span>${icon(M[i])} Our ${NAME[M[i]]}</span><span class="sub">win <b>${fix(w)}</b> − lose <b>${fix(l)}</b></span></span><div class="track"><span class="zero"></span>
+          <span class="bar ${v >= 0 ? "pos" : "neg"}" style="width:${pct}%"></span></div><span class="big ${cls(v)}">${sg(v)}</span></div>`; }).join("")}
+        <div class="axis">${ticks.map((t) => `<span style="left:${(t / lim + 1) * 50}%">${sg(t)}</span>`).join("")}</div>
+        <div class="ends"><span>We lose more</span><span>We win more</span></div></div>`;
+    } },
+
+  { t: "Win against loss, and the gap", why: "<strong>Shows the subtraction itself.</strong> Each move gets its win bar over its loss bar on a true 0 to 0.4 scale. The marked gap between the two bar ends is A q. The class sees why Paper scores: its win bar reaches past its loss bar further than any other. The tie share is a line of text.",
+    chart: (e) => {
+      const top = 0.4, pc = (v) => (v / top) * 100;
+      return `<div class="wl">${e.sp.map(([w, t, l], i) => { const v = e.s[i], a = Math.min(w, l), b = Math.max(w, l);
+        return `<div class="row">${who(M[i])}<div class="pair">
+          <div class="ln"><span>win</span><span class="b"><i style="width:${pc(w)}%;background:var(--w)">${fix(w)}</i></span></div>
+          <div class="ln"><span>lose</span><span class="b"><i style="width:${pc(l)}%;background:var(--l)">${fix(l)}</i></span></div>
+          <span class="gap" style="left:calc(80px + (100% - 80px) * ${a / top});width:calc((100% - 80px) * ${(b - a) / top})"><b>${sg(v)}</b></span>
+          <span class="tie">tie ${fix(t)} scores 0</span></div>
+          <span class="big ${cls(v)}">${sg(v)}</span></div>`; }).join("")}
+        <div class="scale"><span>0</span><span>0.1</span><span>0.2</span><span>0.3</span><span>0.4</span></div></div>`;
+    } },
+
+  { t: "A's row recolours q", why: "<strong>Shows the matrix product.</strong> The columns are q, their three moves, with the same three bars in every row. Each row of A paints them +1 green, 0 grey, −1 red, and the row adds up to A q. The cyclic pattern of A is visible as the colours shifting one step per row.",
+    chart: (e) => {
+      const top = Math.max(...e.q);
+      const head = `<span></span>${M.map((m, j) => `<span class="hd">${icon(m)}Their ${NAME[m]}<small>q = ${fix(e.q[j])}</small></span>`).join("")}<span></span><span class="hd" style="text-align:right">A q</span>`;
+      const rows = A.map((row, i) => `${who(M[i])}${row.map((a, j) => `<span class="cell${a === 0 ? " zz" : ""}"><span class="a ${a > 0 ? "pos" : a < 0 ? "neg" : "zer"}">${int(a)}</span><i style="height:${(e.q[j] / top) * 80}px;background:${a > 0 ? "var(--w)" : a < 0 ? "var(--l)" : "var(--t)"}"></i></span>`).join("")}
+        <span class="eqs">=</span><span class="sum"><span class="big ${cls(e.s[i])}">${sg(e.s[i])}</span><small>${fix(e.q[row.indexOf(1)])} − ${fix(e.q[row.indexOf(-1)])}</small></span>`).join("");
+      return `<div class="ar">${head}${rows}<span></span><span class="base"></span></div>${key}`;
+    } },
+
+  { t: "Stacked, tie centred on zero", why: "<strong>Keeps the stacked bar PRESENTATION-FLOW asks for.</strong> Loss runs left of zero, win right, and the tie straddles the zero line. A move that wins more than it loses leans right; the marker on top is the bar's midpoint, half of A q. Familiar from survey charts, but the lean is small when the scores are close.",
+    chart: (e) => {
+      // scale: half the track holds 0.6 of share, so the longest side fits
+      const half = 0.6, x = (v) => 50 + (v / half) * 50;
+      return `<div class="dv"><span></span><div class="heads"><span>We lose</span><span>Tie</span><span>We win</span></div><span></span>
+        ${e.sp.map(([w, t, l], i) => { const L = -(l + t / 2), T = t / 2;
+          return `<div class="row">${who(M[i])}<div class="trk"><span class="zero"></span>
+            <span class="seg lo" style="left:${x(L)}%;width:${x(-t / 2) - x(L)}%;background:var(--l)">${fix(l)}</span>
+            <span class="seg t" style="left:${x(-t / 2)}%;width:${x(T) - x(-t / 2)}%;background:var(--t)">${fix(t)}</span>
+            <span class="seg wi" style="left:${x(T)}%;width:${x(T + w) - x(T)}%;background:var(--w)">${fix(w)}</span>
+            <span class="mid" style="left:${x((L + T + w) / 2)}%"></span></div>
+            <span class="big ${cls(e.s[i])}">${sg(e.s[i])}</span></div>`; }).join("")}</div>${key}`;
+    } },
+];
+
+function render(id) {
+  const e = EX[id];
+  document.getElementById("drafts").innerHTML = drafts.map((d, i) =>
+    `<section class="draft"><h2><b>${i}</b>${d.t}</h2><p class="why">${d.why}</p>${sheet(e, d.chart(e))}</section>`).join("");
+}
+document.querySelectorAll(".ex button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll(".ex button").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
+  render(b.dataset.ex);
+}));
+render(new URLSearchParams(location.search).get("ex") || "RW");
+</script>
+</body></html>

@@ -289,6 +289,37 @@ def test_look_ahead_stops_at_tolerance():
     assert (changes[:-1] >= 0.01).all()
 
 
+def test_eigenvectors_and_coefficients():
+    tm = bot_match(Counts(count(synthetic_rounds(seed=7))))
+    V = tm.eigenvectors
+
+    assert V.shape == (9, 9)
+    np.testing.assert_allclose(tm.P @ V, V * tm.eigenvalues, rtol=0, atol=1e-9)
+    np.testing.assert_allclose(V[:, 0], tm.stationary, rtol=0, atol=1e-12)
+    for k in range(1, 9):
+        np.testing.assert_allclose(np.linalg.norm(V[:, k]), 1, rtol=0, atol=1e-12)
+        big = V[np.argmax(np.abs(V[:, k])), k]
+        assert big.real > 0 and abs(big.imag) < 1e-12
+    for j in range(9):
+        x = one_hot(9, j)
+        c = tm.coefficients(x)
+        np.testing.assert_allclose(c[0], 1, rtol=0, atol=1e-9)
+        np.testing.assert_allclose(V @ c, x, rtol=0, atol=1e-9)
+        for t, row in enumerate(tm.look_ahead(x)):
+            np.testing.assert_allclose((V * tm.eigenvalues ** t) @ c, row, rtol=0, atol=1e-9)
+
+
+def test_eigenvectors_reducible():
+    tm = bot_match(reducible_counts())
+    V = tm.eigenvectors
+
+    if V is not None:
+        np.testing.assert_allclose(tm.P @ V, V * tm.eigenvalues, rtol=0, atol=1e-9)
+        np.testing.assert_allclose(V @ tm.coefficients(one_hot(9, 0)), one_hot(9, 0), rtol=0, atol=1e-9)
+    else:
+        assert tm.coefficients(one_hot(9, 0)) is None
+
+
 def test_look_ahead_uniform():
     rows = BasicTransitionMatrix(zero_counts()).look_ahead(one_hot(3, 0))
 

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { newGame, playRound } from "./game.js";
 import RoundReport from "./RoundReport.jsx";
-import { LongRun, LookAhead, Policy, Tally } from "./Panels.jsx";
+import LookAhead from "./LookAhead.jsx";
+import { LongRun, Tally } from "./Panels.jsx";
 import { Card, Sprites } from "./ui.jsx";
 import WinScreen from "./WinScreen.jsx";
 
-const TABS = [["round", "This round"], ["long", "Long run"], ["tally", "Tally"], ["policy", "Policy"], ["ahead", "Look ahead"]];
+const TABS = [["round", "This round"], ["long", "Long run"], ["tally", "Tally"], ["ahead", "Look ahead"]];
 
 // Each round: the class works through the steps, the presenter picks our move ("think"),
 // enters the friend's move ("reveal"), and sees the result until the next round ("result").
@@ -123,8 +124,7 @@ export default function Projector({ bot }) {
           )}
           {tab === "long" && <LongRun bot={bot} />}
           {tab === "tally" && <Tally bot={bot} history={game.history} />}
-          {tab === "policy" && <Policy bot={bot} />}
-          {tab === "ahead" && <LookAhead />}
+          {tab === "ahead" && <LookAhead bot={bot} state={game.state} />}
         </section>
       </main>
 

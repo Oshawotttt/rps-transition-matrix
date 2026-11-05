@@ -78,6 +78,8 @@ All classes are in `src/rps_markov/markov.py`.
   - `moduli: np.ndarray`: the modulus of each entry of `eigenvalues`, same order.
   - `eigenvalue_one_multiplicity: int`: how many eigenvalues are within 1e-9 of 1 (the test `stationary` uses).
   - `has_unit_cycle: bool`: some eigenvalue has modulus within 1e-9 of 1 but is not within 1e-9 of 1 (e.g. −1): π is unique but the chain cycles and never settles.
+  - `eigenvectors: np.ndarray | None`: complex, one per column, same order as `eigenvalues`; `None` when P is not diagonalisable (condition number of the eigenvector matrix above 1 / 1e-9). An eigenvector for eigenvalue 1 is real and, unless its entries sum to 0, scaled to sum to 1, so column 0 is π when π is unique. Every other column has length 1 with its largest-modulus entry real and positive, which fixes NumPy's free sign.
+  - `coefficients(x) -> np.ndarray | None`: complex c with x = Σ cₖ vₖ over the columns of `eigenvectors`, so Pᵗ x = Σ cₖ λₖᵗ vₖ; `None` when `eigenvectors` is. c₁ = 1 for any x summing to 1 when π is unique.
   - `look_ahead(x, tol: float = 0.01, max_steps: int = 100) -> np.ndarray`: shape (t + 1, n); row 0 is x, row k is Pᵏ x. Stops at the first t where the sum of absolute differences between row t and row t−1 is below tol (that converged row is included), or at t = max_steps.
   - `rounds_to_fade(fraction: float = 0.1) -> int | None`: the smallest t with modulus(λ₂)ᵗ < fraction, i.e. ceil(ln fraction / ln modulus(λ₂)). 0 only when modulus(λ₂) is exactly 0 (on a uniform P floating point gives about 1e-17, so it returns 1). `None` when modulus(λ₂) ≥ 1 − 1e-9.
   - `closed_groups: list[list[str]]`: the closed communicating classes of the chain, from the exact nonzero pattern of P (an entry counts if it is > 0, so tiny smoothed entries such as alpha 1e-12 still count as moves). Each group lists its state labels in `states` order; groups are sorted by their first state's index.
@@ -120,7 +122,7 @@ All classes are in `src/rps_markov/markov.py`.
 | `q` | `outcome.P @ x`, column `state` of P (3) | `outcome.P @ π`, or π of `basic` on fallback |
 | `scores` | `payoff.scores(q)` (3) | same |
 | `move` | `payoff.best_move(q)` | same |
-| `source` | `"state"` | `"match"`, or `"basic"` on fallback |
+| `source` | `"state"` | `"match"`, or `"basic"` on fallback (`"look_ahead"` in `look_ahead[s].decisions`) |
 | `counter_move` | the move that beats the most likely human move (argmax of q, first in R, P, S on a tie), read from A | same |
 | `splits` | 3 × 3; rows bot move R, P, S; columns `win`, `tie`, `lose` from the bot's side; row b = the sum of q over human moves m with A[b, m] = +1, 0, −1 | same |
 | `expected_score` | `scores` at `move` (the largest entry of A q) | same |
@@ -129,7 +131,7 @@ All classes are in `src/rps_markov/markov.py`.
 
 ## Bot JSON file
 
-Written by `python -m rps_markov.bot` (see CLI) from `Bot.to_dict()` for the browser frontend, which reads it as a static file. Everything in it is computed in Python and fixed before the game. Values are JSON-safe: lists of floats and ints, strings, `null`. Every matrix is a list of rows. Every eigenvalue list is a list of `[re, im]` pairs, sorted as `eigenvalues` sorts them. The frontend gets each round's outcome from the exported A (`A[bot, human]`: +1 bot wins, 0 tie, −1 human wins).
+Written by `python -m rps_markov.bot` (see CLI) from `Bot.to_dict()` for the browser frontend, which reads it as a static file. Everything in it is computed in Python and fixed before the game. Values are JSON-safe: lists of floats and ints, strings, `null`. Every matrix is a list of rows. Every eigenvalue list is a list of `[re, im]` pairs, sorted as `eigenvalues` sorts them. `eigenvectors` is a list of vectors (not rows), one per eigenvalue in the same order, each a list of `[re, im]` pairs, or `null`. The frontend gets each round's outcome from the exported A (`A[bot, human]`: +1 bot wins, 0 tie, −1 human wins).
 
 Top-level keys:
 
@@ -140,12 +142,12 @@ Top-level keys:
 | `alpha` | float; read from `outcome.alpha`, the value the matrices were built with |
 | `payoff` | `{A}`: 3 × 3 ints, rows bot move, columns human move |
 | `outcome` | `{P}`: 3 × 9 |
-| `basic` | `{P, eigenvalues, moduli, eigenvalue_one_multiplicity, has_unit_cycle, rounds_to_fade, stationary, closed_groups, transient_states}`; `rounds_to_fade` is `rounds_to_fade(0.1)` |
+| `basic` | `{P, eigenvalues, eigenvectors, moduli, eigenvalue_one_multiplicity, has_unit_cycle, rounds_to_fade, stationary, closed_groups, transient_states}`; `rounds_to_fade` is `rounds_to_fade(0.1)` |
 | `match` | the same keys as `basic`, plus `outcome_rates`, `edge`, `edge_check`, `group_stationary`, `group_outcome_rates` |
 | `opening` | `Decision.to_dict()` |
 | `decisions` | object keyed by the 9 `TOKENS`, each `get_move(s).to_dict()` |
 | `policy` | `{S, B}`: S = A P (3 × 9, column s = `decisions[s].scores`), B = 3 × 9 one-hot of `decisions[s].move` |
-| `look_ahead` | object keyed by the 9 `TOKENS`, each `{rows, stopped_at}`: `rows` = `match.look_ahead(one-hot s)` as a list of 9-vectors, `stopped_at` = its row count − 1 |
+| `look_ahead` | object keyed by the 9 `TOKENS`, each `{rows, stopped_at, coefficients}`: `rows` = `match.look_ahead(one-hot s)` as a list of 9-vectors, `stopped_at` = its row count − 1, `coefficients` = `match.coefficients(one-hot s)` as `[re, im]` pairs (`null` when `eigenvectors` is), `decisions` = one Decision per row (state `null`, x = the row, q = `outcome.P @ row`, `source` `"look_ahead"`): the move if the state were only known as that row |
 
 `stationary`, `outcome_rates`, `edge` and `edge_check` are `null` when π is not unique, tested by `eigenvalue_one_multiplicity == 1` rather than by catching `ValueError`, so no other error is hidden (the same rule makes `basic.stationary` `null` if the 3 × 3 π is ever not unique). `rounds_to_fade` is `null` when modulus(λ₂) ≥ 1 − 1e-9. `eigenvalue_one_multiplicity`, `closed_groups`, `group_stationary` and `group_outcome_rates` give the banner and the per-group rates (PRESENTATION-FLOW 2.4).
 

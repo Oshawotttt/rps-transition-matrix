@@ -2,6 +2,8 @@ import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource/atkinson-hyperlegible/400.css";
 import "@fontsource/atkinson-hyperlegible/700.css";
+import "@fontsource/atkinson-hyperlegible/400-italic.css";
+import "@fontsource/atkinson-hyperlegible/700-italic.css";
 import "@fontsource/gabarito/500.css";
 import "@fontsource/gabarito/700.css";
 import "@fontsource/gabarito/800.css";
