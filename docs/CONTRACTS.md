@@ -23,6 +23,8 @@ Written by the notebook to `data/processed/partitions/`: `train_brockbank`, `tes
 - Pooled = the brockbank rows, then the wxz rows, of the same split.
 - The master is read, never written.
 
+Single-human files: `write_players(master, out_dir, players)` writes `<name>.csv` for each `name -> player_id` in `players` (default `DEMO_HUMANS`: `human_stubborn`, `human_cycler`, `human_wsls`, `human_doubler`). Each file holds every master row of that one player, in master order, with the same columns. `player_rounds(df, player_id)` returns those rows, and raises `KeyError` for an unknown player.
+
 Code: `src/rps_markov/partition.py`.
 
 ## States

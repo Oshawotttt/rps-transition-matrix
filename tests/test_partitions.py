@@ -3,7 +3,7 @@ import hashlib
 import pandas as pd
 import pytest
 
-from rps_markov.partition import partition, write_partitions
+from rps_markov.partition import partition, player_rounds, write_partitions, write_players
 
 COLUMNS = ["dataset", "game_id", "player_id", "round", "move", "opp_move",
            "outcome", "prev_move", "prev_opp_move", "prev_outcome"]
@@ -90,3 +90,26 @@ def test_partition_columns(master):
     assert sorted(parts) == sorted(KEYS)
     for part in parts.values():
         assert list(part.columns) == COLUMNS
+
+
+def test_player_rounds_one_player(master):
+    rows = player_rounds(master, "wxz_p3")
+
+    pd.testing.assert_frame_equal(rows, master[master["player_id"] == "wxz_p3"].reset_index(drop=True))
+
+
+def test_player_rounds_unknown(master):
+    with pytest.raises(KeyError):
+        player_rounds(master, "nobody")
+
+
+def test_write_players(tmp_path, master):
+    path = tmp_path / "master.csv"
+    master.to_csv(path, index=False)
+    before = sha256(path)
+
+    write_players(path, tmp_path / "humans", {"human_a": "brockbank_p1", "human_b": "wxz_p0"})
+
+    assert sha256(path) == before
+    assert sorted(p.name for p in (tmp_path / "humans").iterdir()) == ["human_a.csv", "human_b.csv"]
+    assert set(pd.read_csv(tmp_path / "humans" / "human_b.csv")["player_id"]) == {"wxz_p0"}

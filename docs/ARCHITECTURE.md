@@ -33,7 +33,7 @@ web/src/game.js: loadBot → validateBot → newGame → playRound (browser; the
 | Module | Role |
 |---|---|
 | `notebooks/clean_data.ipynb` | Cleans and combines the two raw datasets into the master; section 6 writes the partitions. |
-| `src/rps_markov/partition.py` | Splits the master into train/test copies by player. Pure pandas/numpy; the notebook is its only caller. |
+| `src/rps_markov/partition.py` | Splits the master into train/test copies by player, and writes one-player copies for the single-human bots (`write_players`). Pure pandas/numpy. |
 | `src/rps_markov/count.py` | Loads master-format CSVs, builds the previous-token history, counts N and holds the CLI. Counting only; no matrices. |
 | `src/rps_markov/matrix.py` | `Matrix`, the abstract labelled-matrix base (`rows`, `columns`, `values`, `to_frame`, `@`). |
 | `src/rps_markov/markov.py` | `Counts` (loads and holds N, read-only) and the transition matrices built from it: `TransitionMatrix` base, `OutcomeTransitionMatrix`, `SquareTransitionMatrix`, `BasicTransitionMatrix`, `BotMatchTransitionMatrix`. |

@@ -74,6 +74,35 @@ cp data/processed/bots/bot_rps_human_combined.json web/public/bots/
 
 It can go stale when `data/` is rebuilt; `tests/test_bot.py::test_default_bot_is_current` fails then (skipped when the N file is missing).
 
+## Single-human bots
+
+Four demo bots, each trained on one human's full game (about 299 transitions). The four were picked from all 188 players because each one has:
+
+- one closed group holding all 9 states, with no transient states and no unit cycle, so π is unique and the opening comes from the 9 × 9;
+- no zero cells in N;
+- all three bot moves in its policy;
+- a pattern you can name.
+
+| Bot file | Player | Pattern | Policy (RW … ST) | 3 × 3 \|λ₂\| | 9 × 9 \|λ₂\| | Edge |
+|---|---|---|---|---|---|---|
+| `bot_human_stubborn.json` | wxz `wxz_2` | Repeats their last move about 75% of the time, whatever the outcome. | `PPPSSSRRR` | 0.61 | 0.59 | 0.55 |
+| `bot_human_cycler.json` | brockbank `1e58af30…` | Plays the move that beats their last one (R → P → S) about 50% of the time. | `SSSRRRPPP` | 0.33 | 0.51 | 0.38 |
+| `bot_human_wsls.json` | brockbank `b068ac38…` | Win-stay (66%), lose-shift (87%). The 3 × 3 looks random; the outcome shows the pattern. | `PSPSRSRPR` | 0.13 | 0.72 | 0.28 |
+| `bot_human_doubler.json` | wxz `wxz_48` | Repeats after a loss (74%) and shifts up after a win (55%). π piles onto PL (37%). | `SPPRSSPRR` | 0.25 | 0.72 | 0.49 |
+
+Edge is in-sample: it comes from the same 300 rounds the bot was trained on, so it overstates the edge against new play. The player ids are in `DEMO_HUMANS` in `src/rps_markov/partition.py`. Rebuild from the repo root:
+
+```
+python -c "from rps_markov.partition import write_players; write_players('data/processed/rps_human_combined.csv', 'data/processed/partitions')"
+python -m rps_markov.count --csv data/processed/partitions/human_stubborn.csv data/processed/partitions/human_cycler.csv data/processed/partitions/human_wsls.csv data/processed/partitions/human_doubler.csv --out data/processed/transition_matrices
+python -m rps_markov.bot --counts data/processed/transition_matrices/N_human_stubborn.csv --out web/public/bots/bot_human_stubborn.json --name "The Stubborn One"
+python -m rps_markov.bot --counts data/processed/transition_matrices/N_human_cycler.csv --out web/public/bots/bot_human_cycler.json --name "The Cycler"
+python -m rps_markov.bot --counts data/processed/transition_matrices/N_human_wsls.csv --out web/public/bots/bot_human_wsls.json --name "Win-Stay Lose-Shift"
+python -m rps_markov.bot --counts data/processed/transition_matrices/N_human_doubler.csv --out web/public/bots/bot_human_doubler.json --name "The Doubler"
+```
+
+To load one, open the app with `?bot=bots/bot_human_wsls.json`.
+
 ## Game logic
 
 `web/src/game.js` loads a bot JSON and plays a best-of-3 or best-of-5 match in the browser. It is a plain ES module with no npm dependencies and no DOM code; the React UI beside it only calls it. API: [Contracts](docs/CONTRACTS.md), "Game logic".
