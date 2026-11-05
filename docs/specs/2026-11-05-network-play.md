@@ -163,28 +163,36 @@ Responses: `204` on success. Errors return JSON `{error: <message>}`: `400` bad 
   - `npm run host` = `vite --host`, port 5173; `npm run dev` unchanged (user, confirmed). Doc delta (README).
   - User: "sure" to the README covering the same wifi first and a hotspot as the fallback, and removing the `TODO.md` item. The hotspot can come from a phone or from Windows Mobile hotspot; both laptops join it (user, confirmed). The Windows firewall note from `TODO.md` stays. Doc delta.
 - **Acceptance criteria:**
-  - [ ] `GET /api/events?role=host` from loopback sends a first `state` event with `role` `"host"`, `bot` `"bot_rps_human_combined.json"`, `flow.phase` `"think"`, `flow.game.bestOf` 3, `seat` `"empty"` (`web/test/relay.test.js`).
-  - [ ] `GET /api/events?role=host` from a remote address returns `403` and no stream; `role` missing or `"admin"` returns `400` (`relay.test.js`).
-  - [ ] A guest stream with a seat id takes the empty seat: it gets `seat` `"mine"` and a `view`; a second seat id gets `seat` `"taken"` and `view` `null`; the host's next event has `seat` `"taken"` and `playerOnline` true (`relay.test.js`).
-  - [ ] A guest stream from loopback is allowed (`relay.test.js`).
-  - [ ] Every `POST /api/host/*` path and `GET /api/host/bots` from a remote address returns `403` and changes nothing (`relay.test.js`).
-  - [ ] `POST /api/player/throw` and `POST /api/player/leave` with a seat id that does not hold the seat return `403` (`relay.test.js`).
-  - [ ] A full round over HTTP: host `pick` with `decision.move` returns `204`, guest `throw` returns `204`, and both streams then get a `state` with the result (host `flow.phase` `"result"`, guest `view.phase` `"result"`, `view.last` set) (`relay.test.js`).
-  - [ ] Host `pick` with a wrong move returns `409`; a second guest throw in one round returns `409`; `next` while `"think"` returns `409` (`relay.test.js`).
-  - [ ] Unknown move, `bestOf` 4, bad JSON, and bot names `../x.json`, `a/b.json`, `missing.json` each return `400` (`relay.test.js`).
-  - [ ] `POST /api/host/new` with `{bestOf: 5}` resets to a best-of-5 match at round 1 and broadcasts it; with `{bestOf: 3, bot: <other file>}` the host's next event names that bot (`relay.test.js`).
-  - [ ] `GET /api/host/bots` lists the `.json` files of the test's bots folder, sorted (`relay.test.js`, with a temp folder holding the synthetic fixture under two names).
-  - [ ] `POST /api/host/free-seat` empties the seat; then `POST /api/player/claim` from the second id gets it. `POST /api/player/leave` by the holder empties the seat (`relay.test.js`).
-  - [ ] No guest `state` event, in any phase of a full match, contains the keys `decision`, `pick` or `history` (`relay.test.js`).
-  - [ ] Any other `/api/` path returns `404`; a non-`/api/` path calls `next()` (`relay.test.js`).
-  - [ ] `web/package.json` has the script `"host": "vite --host"`, and `vite.config.js` registers `relayPlugin()` (`relay.test.js` reads both files).
-  - [ ] The full suite passes: `node --test "web/test/*.test.js"`.
+  - [x] `GET /api/events?role=host` from loopback sends a first `state` event with `role` `"host"`, `bot` `"bot_rps_human_combined.json"`, `flow.phase` `"think"`, `flow.game.bestOf` 3, `seat` `"empty"` (`web/test/relay.test.js`).
+  - [x] `GET /api/events?role=host` from a remote address returns `403` and no stream; `role` missing or `"admin"` returns `400` (`relay.test.js`).
+  - [x] A guest stream with a seat id takes the empty seat: it gets `seat` `"mine"` and a `view`; a second seat id gets `seat` `"taken"` and `view` `null`; the host's next event has `seat` `"taken"` and `playerOnline` true (`relay.test.js`).
+  - [x] A guest stream from loopback is allowed (`relay.test.js`).
+  - [x] Every `POST /api/host/*` path and `GET /api/host/bots` from a remote address returns `403` and changes nothing (`relay.test.js`).
+  - [x] `POST /api/player/throw` and `POST /api/player/leave` with a seat id that does not hold the seat return `403` (`relay.test.js`).
+  - [x] A full round over HTTP: host `pick` with `decision.move` returns `204`, guest `throw` returns `204`, and both streams then get a `state` with the result (host `flow.phase` `"result"`, guest `view.phase` `"result"`, `view.last` set) (`relay.test.js`).
+  - [x] Host `pick` with a wrong move returns `409`; a second guest throw in one round returns `409`; `next` while `"think"` returns `409` (`relay.test.js`).
+  - [x] Unknown move, `bestOf` 4, bad JSON, and bot names `../x.json`, `a/b.json`, `missing.json` each return `400` (`relay.test.js`).
+  - [x] `POST /api/host/new` with `{bestOf: 5}` resets to a best-of-5 match at round 1 and broadcasts it; with `{bestOf: 3, bot: <other file>}` the host's next event names that bot (`relay.test.js`).
+  - [x] `GET /api/host/bots` lists the `.json` files of the test's bots folder, sorted (`relay.test.js`, with a temp folder holding the synthetic fixture under two names).
+  - [x] `POST /api/host/free-seat` empties the seat; then `POST /api/player/claim` from the second id gets it. `POST /api/player/leave` by the holder empties the seat (`relay.test.js`).
+  - [x] No guest `state` event, in any phase of a full match, contains the keys `decision`, `pick` or `history` (`relay.test.js`).
+  - [x] Any other `/api/` path returns `404`; a non-`/api/` path calls `next()` (`relay.test.js`).
+  - [x] `web/package.json` has the script `"host": "vite --host"`, and `vite.config.js` registers `relayPlugin()` (`relay.test.js` reads both files).
+  - [x] The full suite passes: `node --test "web/test/*.test.js"`.
 - **Doc deltas:**
   - `docs/CONTRACTS.md`: new section "Relay server" with the HTTP API, roles, status codes, `state` event shapes and the bot file name rule.
   - `docs/ARCHITECTURE.md`: `web/src/flow.js`'s caller `web/server/relay.js` in Modules and the data flow; rules: the server holds the match and runs `game.js` in Node; only the laptop running the server can host (loopback), no password; one seat; the guest stream never carries the bot's decision, pick or history; the match is in memory only. Replace "No friend's device screen and no relay server yet" in "Not included" with: one seat only, no spectators, no internet play, HTTPS or accounts, no hosting from another machine, no match kept across a server restart.
   - `README.md`: new section "Play on two laptops": both laptops on the same wifi; on the presenter laptop run `npm run host` from `web/` and open `http://localhost:5173/`, choose Host; the friend's laptop opens the "Network" URL Vite prints and chooses Join as guest; one laptop can test both roles in two tabs; allow Node through the Windows firewall on Public networks; if the wifi blocks device-to-device traffic, both laptops join a hotspot (a phone's, or Windows Mobile hotspot) and use the Network URL Vite prints on it. Replace "Until the relay server exists, the presenter then enters the friend's move on the projector".
   - `TODO.md`: remove the "Play on a phone over the laptop's hotspot" item (moved into the README).
   - `GLOSSARY.md`: **Seat** (the one guest slot; held by one tab's seat id).
+  - Decision made: the listed host paths check loopback before reading the body, so a remote caller gets `403` even with a bad body; an unlisted `/api/host/...` path or a wrong method is `404`, not `403`. Goes in `docs/CONTRACTS.md` "Relay server".
+  - Decision made: `POST /api/player/claim` while another seat id holds the seat is `403` (the caller does not hold it); by the holder it is `204` and changes nothing. Goes in `docs/CONTRACTS.md` "Relay server".
+  - Decision made: a `POST` body that is JSON but not an object, and a missing or empty `seat` in a player `POST`, are `400`. Goes in `docs/CONTRACTS.md` "Relay server".
+  - Decision made: a bot file whose name passes the rule but whose JSON fails to parse or fails `validateBot` is `400` with that error; any unexpected server error is `500` with `{error}`. Goes in `docs/CONTRACTS.md` "Relay server".
+  - Decision made: every successful `POST`, and every guest stream opening or closing, sends a `state` event to every open stream; a new host stream gets only its own first event. Goes in `docs/CONTRACTS.md` "Relay server".
+  - Decision made: the default bot is read once when the relay starts; if it is missing or invalid the dev server fails to start. Goes in `docs/ARCHITECTURE.md` rules.
+  - Decision made: one 20 s ping timer per relay serves all streams; `close()` ends the streams and stops it, and the plugin calls it when Vite's HTTP server closes. No doc needed: the code comment in `web/server/relay.js` says so.
+  - Decision made: `relay.test.js` acts as a remote device through an `isLocal` that reads a test-only header (`x-test-remote`), on one loopback socket. No doc needed: the test file says so.
 
 ### S3: Start screen and host screen on the server's state
 
