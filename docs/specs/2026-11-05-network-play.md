@@ -129,21 +129,24 @@ Responses: `204` on success. Errors return JSON `{error: <message>}`: `400` bad 
   - Only `decision.move` can be picked; a wrong pick is refused (docs: `docs/ARCHITECTURE.md`, "The presenter can only play the recommended move"). Already recorded.
   - Roles are `host` and `player`; the screen calls the player "guest" (user, confirmed). Doc delta.
 - **Acceptance criteria:**
-  - [ ] `newFlow(bot, 3)` gives phase `"think"`, `pick` and `thrown` `null`, and a game equal to `newGame(bot, 3)` (`web/test/flow.test.js`).
-  - [ ] Pick then throw: after `pickMove` phase is `"reveal"`; after `throwMove` phase is `"result"` and `game.history` has one round with `botMove` = the pick and `humanMove` = the throw (`flow.test.js`).
-  - [ ] Throw then pick: after `throwMove` phase stays `"think"` with `thrown` set; after `pickMove` phase is `"result"` with the same round (`flow.test.js`).
-  - [ ] `pickMove` with a move other than `decision.move` throws `code` `"wrong"`; an unknown move throws `code` `"move"` in `pickMove` and `throwMove` (`flow.test.js`).
-  - [ ] `code` `"phase"`: a second `throwMove` in one round, `pickMove` outside `"think"`, `throwMove` in `"result"`, `nextRound` outside `"result"`, and `nextRound` once `game.winner` is set (`flow.test.js`).
-  - [ ] `nextRound` after a non-final result gives phase `"think"`, `pick` and `thrown` `null`, and keeps the game (`flow.test.js`).
-  - [ ] Every function leaves its input unchanged, and every returned `Flow` is frozen (`flow.test.js`).
-  - [ ] `playerView` has exactly the keys `phase, thrown, bestOf, target, round, tally, winner, opponent, last` in each phase; `"open"` / `"locked"` / `"result"` map from the flow as in Interfaces; `last` is `null` before round 1, then the last round's four fields (`flow.test.js`).
-  - [ ] `JSON.stringify(playerView(f))` does not contain the decision's `q` or `scores` values, for a flow in `"reveal"` (`flow.test.js`).
-  - [ ] `hostView` gives `thrown` as a boolean and a `game` without `bot` (`flow.test.js`).
-  - [ ] The full suite passes: `node --test "web/test/*.test.js"`.
+  - [x] `newFlow(bot, 3)` gives phase `"think"`, `pick` and `thrown` `null`, and a game equal to `newGame(bot, 3)` (`web/test/flow.test.js`).
+  - [x] Pick then throw: after `pickMove` phase is `"reveal"`; after `throwMove` phase is `"result"` and `game.history` has one round with `botMove` = the pick and `humanMove` = the throw (`flow.test.js`).
+  - [x] Throw then pick: after `throwMove` phase stays `"think"` with `thrown` set; after `pickMove` phase is `"result"` with the same round (`flow.test.js`).
+  - [x] `pickMove` with a move other than `decision.move` throws `code` `"wrong"`; an unknown move throws `code` `"move"` in `pickMove` and `throwMove` (`flow.test.js`).
+  - [x] `code` `"phase"`: a second `throwMove` in one round, `pickMove` outside `"think"`, `throwMove` in `"result"`, `nextRound` outside `"result"`, and `nextRound` once `game.winner` is set (`flow.test.js`).
+  - [x] `nextRound` after a non-final result gives phase `"think"`, `pick` and `thrown` `null`, and keeps the game (`flow.test.js`).
+  - [x] Every function leaves its input unchanged, and every returned `Flow` is frozen (`flow.test.js`).
+  - [x] `playerView` has exactly the keys `phase, thrown, bestOf, target, round, tally, winner, opponent, last` in each phase; `"open"` / `"locked"` / `"result"` map from the flow as in Interfaces; `last` is `null` before round 1, then the last round's four fields (`flow.test.js`).
+  - [x] `JSON.stringify(playerView(f))` does not contain the decision's `q` or `scores` values, for a flow in `"reveal"` (`flow.test.js`).
+  - [x] `hostView` gives `thrown` as a boolean and a `game` without `bot` (`flow.test.js`).
+  - [x] The full suite passes: `node --test "web/test/*.test.js"`.
 - **Doc deltas:**
   - `docs/CONTRACTS.md`: new section "Round flow" with the tables under Interfaces (prose and tables only, no code).
   - `docs/ARCHITECTURE.md`: `web/src/flow.js` in the Modules table and the data-flow diagram; rules: the guest may throw before or after the pick, a throw is final for the round, the round plays once both are in; the host can enter the throw as a fallback; the guest view never carries the bot's decision, pick, history or matrices.
   - `GLOSSARY.md`: **Host** (admin; the projector screen on the laptop that runs the server; picks the bot's move and runs the match), **Player** (shown as "guest"; the friend's screen; only throws), **Round flow** (one round's steps: pick, throw, play, next).
+  - Decision made: the move is checked before the phase, so an unknown move is always `code` `"move"` (the relay's `400`), whatever the phase. Goes in `docs/CONTRACTS.md` "Round flow".
+  - Decision made: in phase `"result"` the flow keeps `pick` and `thrown` from the round just played; `nextRound` clears them. Goes in `docs/CONTRACTS.md` "Round flow".
+  - Decision made: `flow.test.js` drives the flow with the synthetic fixture bot (`web/test/fixtures/bot_synthetic.json`), so the decisions are real exported ones. No doc needed: the test file names the fixture.
 
 ### S2: Relay server in the Vite dev and preview servers
 
