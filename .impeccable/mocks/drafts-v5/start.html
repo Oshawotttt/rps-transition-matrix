@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign-in Drafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Gabarito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+@property --bulb { syntax: "<color>"; inherits: true; initial-value: #d39b22; }
+:root {
+  --paper: #fbfbf8; --ink: #20232b; --ink2: #4a4f5c; --wall: #f1efe8; --table: #c9d8c5; --rim: #7f9a7b;
+  --r: #c24b3a; --p: #3462ad; --s: #d39b22; --w: #2f7b55; --t: #d8d5cc; --l: #c24b3a; --hi: #fff3c9; --faint: #a19e96;
+  --robot: #e6ebf1; --robot2: #a9b6c6; --screen: #20232b; --glow: #a6f0c6; --blush: #f4b0a6; --tie: #3462ad;
+  --jacket: #b4483a; --jacket2: #963a2f; --shirt: #fbfbf8; --tie2: #20232b; --skin: #f3cfae; --skin2: #e3b893; --hair: #2e2420; --face: #20232b;
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --display: "Gabarito", system-ui, sans-serif; --text: "Atkinson Hyperlegible", system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #e7e4da; font-family: var(--text); color: var(--ink); font-size: 22px; }
+::selection { background: var(--p); color: #fff; }
+:focus-visible { outline: 3px solid var(--p); outline-offset: 3px; }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; text-align: inherit; }
+
+/* the board around the drafts */
+.board { max-width: 1440px; margin: 0 auto; padding: 48px 56px 120px; }
+.board > h1 { font: 800 48px/1.05 var(--display); letter-spacing: -.02em; }
+.board > p { font-size: 20px; line-height: 1.5; max-width: 72ch; margin-top: 12px; color: var(--ink2); }
+.draft { margin-top: 72px; }
+.draft > h2 { font: 800 32px/1.15 var(--display); letter-spacing: -.01em; }
+.draft > h2 b { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: 22px; margin-right: 14px; vertical-align: 4px; }
+.draft > .why { font-size: 19px; line-height: 1.5; max-width: 82ch; margin: 10px 0 18px; color: var(--ink2); }
+.draft > .why strong { color: var(--ink); }
+.ctl { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.ex { display: flex; gap: 4px; padding: 4px; border-radius: 12px; box-shadow: inset 0 0 0 2px var(--t); background: var(--paper); }
+.ex button { height: 40px; padding: 0 14px; border-radius: 9px; font: 700 16px var(--text); }
+.ex button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.frame { position: relative; height: 860px; border-radius: 16px; overflow: hidden; background: var(--wall); box-shadow: 0 24px 48px -30px rgba(32, 35, 43, .55); container-type: inline-size; margin: 0 auto; transition: width .4s var(--ease), height .4s var(--ease); width: 100%; }
+.frame.phone { width: 390px; height: 844px; }
+.toast { position: absolute; left: 50%; top: 24px; transform: translate(-50%, -140%); z-index: 20; background: var(--ink); color: var(--paper); font: 700 18px var(--text); padding: 12px 20px; border-radius: 999px; transition: transform .45s var(--ease); white-space: nowrap; visibility: hidden; }
+.toast.show { transform: translate(-50%, 0); visibility: visible; }
+
+/* characters, as in the projector */
+.rb-head, .rb-body { fill: var(--robot); } .rb-ear, .rb-neck, .rb-dot { fill: var(--robot2); } .rb-screen { fill: var(--screen); }
+.rb-eye { fill: var(--glow); } .rb-shine { fill: #fff; } .rb-mouth { fill: none; stroke: var(--glow); stroke-width: 4; stroke-linecap: round; }
+.rb-ant { stroke: var(--robot2); stroke-width: 5; stroke-linecap: round; } .rb-bulb { fill: var(--bulb); } .rb-cheek { fill: var(--blush); opacity: .85; } .rb-tie { fill: var(--tie); }
+.hu-jacket { fill: var(--jacket); } .hu-lapel { fill: var(--jacket2); } .hu-shirt { fill: var(--shirt); } .hu-tie { fill: var(--tie2); }
+.hu-skin { fill: var(--skin); } .hu-neck { fill: var(--skin2); } .hu-hair { fill: var(--hair); } .hu-eye { fill: var(--face); }
+.hu-smile { fill: none; stroke: var(--face); stroke-width: 3.5; stroke-linecap: round; } .hu-cheek { fill: var(--blush); opacity: .6; }
+svg.who { display: block; width: 100%; height: 100%; }
+/* while the server is checked, the robot's bulb blinks */
+@keyframes blink { 50% { --bulb: #fff3c9; } }
+.frame[data-state="checking"] .host svg.who { animation: blink .7s steps(1) infinite; }
+.frame[data-state="refused"] .host svg.who { filter: grayscale(.85) opacity(.6); }
+.frame:not([data-state="checking"]) .when-checking, .frame:not([data-state="refused"]) .when-refused, .frame:not([data-state="ready"]) .when-ready { display: none !important; }
+
+/* ---------- draft 1: the room plan ---------- */
+.d1 { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 56px; height: 100%; padding: 64px; }
+.d1 .copy { align-self: center; }
+.d1 h1 { font: 800 58px/1.04 var(--display); letter-spacing: -.025em; text-wrap: balance; }
+.d1 .copy p { font-size: 22px; line-height: 1.5; color: var(--ink2); margin-top: 18px; max-width: 30ch; }
+.d1 .msg { margin-top: 28px; background: var(--hi); border-radius: 14px; padding: 18px 20px; font: 700 19px/1.45 var(--text); }
+.plan { position: relative; background: var(--paper); border-radius: 16px; box-shadow: inset 0 0 0 2px var(--t); overflow: hidden; }
+.plan .screen { position: absolute; top: 30px; left: 22%; right: 22%; height: 14px; border-radius: 7px; background: var(--ink); }
+.plan .screen-l { position: absolute; top: 52px; left: 0; right: 0; text-align: center; font: 700 16px var(--text); color: var(--ink2); }
+.plan .beam { position: absolute; top: 44px; left: 30%; right: 30%; height: 70px; background: linear-gradient(var(--hi), transparent); clip-path: polygon(0 0, 100% 0, 78% 100%, 22% 100%); opacity: .8; }
+.plan .rows { position: absolute; left: 7%; right: 36%; top: 450px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 22px 18px; }
+.plan .rows i { height: 26px; border-radius: 8px; background: var(--wall); box-shadow: inset 0 0 0 2px var(--t); }
+.plan .wifi { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.plan .wifi path { fill: none; stroke: var(--rim); stroke-width: 3; stroke-dasharray: 2 9; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.plan .wifi-l { position: absolute; left: 70%; top: 40%; font: 700 16px var(--text); color: var(--ink2); transform: rotate(18deg); }
+.seat { position: absolute; display: grid; justify-items: center; border-radius: 16px; padding: 0 16px 16px; }
+.seat .fig { position: relative; display: block; }
+.seat .bust { display: block; transition: transform .4s var(--ease); }
+.seat .desk { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); background: var(--table); border-bottom: 9px solid var(--rim); border-radius: 12px 12px 6px 6px; }
+.seat .lbl { margin-top: 18px; text-align: center; }
+.seat .lbl b { display: block; font: 800 36px/1 var(--display); letter-spacing: -.01em; }
+.seat .lbl span { display: block; font-size: 18px; line-height: 1.4; color: var(--ink2); margin-top: 6px; max-width: 26ch; }
+.seat:hover .bust, .seat:focus-visible .bust { transform: translateY(-10px); }
+.seat:hover .lbl b, .seat:focus-visible .lbl b { text-decoration: underline; text-decoration-thickness: 4px; text-underline-offset: 6px; text-decoration-color: var(--s); }
+.d1 .host { top: 70px; left: 50%; transform: translateX(-50%); }
+.d1 .host .bust { width: 200px; height: 200px; }
+.d1 .host .desk { width: 340px; height: 64px; }
+.d1 .guest { right: 28px; bottom: 26px; }
+.d1 .guest .bust { width: 170px; height: 170px; }
+.d1 .guest .desk { width: 190px; height: 54px; border-radius: 50px 50px 24px 24px; }
+.d1 .corner-l { position: absolute; right: 44px; bottom: 296px; font: 700 16px var(--text); color: var(--ink2); }
+@container (max-width: 700px) {
+  .d1 { grid-template-columns: 1fr; gap: 20px; padding: 28px 20px; align-content: start; }
+  .d1 h1 { font-size: 36px; }
+  .d1 .copy p { font-size: 18px; margin-top: 10px; }
+  .d1 .msg { font-size: 16px; padding: 14px 16px; margin-top: 16px; }
+  .plan { display: grid; gap: 14px; padding: 82px 14px 14px; }
+  .plan .rows, .plan .beam, .plan .wifi, .plan .wifi-l, .d1 .corner-l { display: none; }
+  .seat { position: static; transform: none !important; grid-template-columns: auto 1fr; align-items: center; justify-items: start; gap: 16px; padding: 10px; background: var(--wall); }
+  .d1 .host .bust, .d1 .guest .bust { width: 104px; height: 104px; }
+  .d1 .host .desk, .d1 .guest .desk { width: 110px; height: 30px; border-bottom-width: 6px; }
+  .seat .lbl { margin: 0; text-align: left; }
+  .seat .lbl b { font-size: 28px; }
+  .seat .lbl span { font-size: 16px; }
+}
+
+/* ---------- draft 2: two cards on the table ---------- */
+.d2 { position: relative; height: 100%; }
+.d2 .head { text-align: center; padding: 64px 24px 0; }
+.d2 h1 { font: 800 60px/1.04 var(--display); letter-spacing: -.025em; text-wrap: balance; }
+.d2 .head p { font-size: 22px; color: var(--ink2); margin-top: 14px; }
+.d2 .table { position: absolute; left: 0; right: 0; bottom: 0; height: 36%; background: var(--table); border-top: 12px solid var(--rim); }
+.d2 .cards { position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%); display: flex; gap: 80px; perspective: 1600px; }
+.pc { width: 320px; height: 440px; position: relative; transition: transform .45s var(--ease); }
+.pc.host { transform: rotate(-5deg); } .pc.guest { transform: rotate(5deg); }
+.pc .in { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .7s var(--ease); }
+.pc .face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; background: var(--paper); box-shadow: 0 22px 30px -16px rgba(32, 35, 43, .55); padding: 18px 18px 26px; display: flex; flex-direction: column; transition: box-shadow .45s var(--ease); }
+.pc .art { position: relative; height: 230px; border-radius: 10px; background: var(--wall); overflow: hidden; }
+.pc .art::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 42px; background: var(--table); border-top: 6px solid var(--rim); }
+.pc .art svg.who { position: absolute; left: 50%; bottom: 14px; width: 210px; height: 210px; transform: translateX(-50%); }
+.pc h2 { font: 800 46px/1 var(--display); letter-spacing: -.02em; margin-top: 22px; padding: 0 6px; }
+.pc p { font-size: 19px; line-height: 1.4; color: var(--ink2); margin-top: 10px; padding: 0 6px; }
+.pc .back { transform: rotateY(180deg); background: var(--ink); color: var(--paper); justify-content: center; padding: 34px; }
+.pc .back svg { width: 60px; height: 60px; margin-bottom: 22px; }
+.pc .back h2 { padding: 0; margin: 0; font-size: 38px; }
+.pc .back p { color: #d8d5cc; padding: 0; font-size: 18px; margin-top: 14px; }
+.pc:hover, .pc:focus-visible { transform: rotate(0) translateY(-18px); }
+.pc:hover .face:not(.back), .pc:focus-visible .face:not(.back) { box-shadow: 0 36px 40px -20px rgba(32, 35, 43, .55); }
+.frame[data-state="checking"] .pc.host { transform: rotate(0) translateY(-18px); }
+.frame[data-state="refused"] .pc.host .in { transform: rotateY(180deg); }
+.frame[data-state="refused"] .pc.host { transform: rotate(-5deg); cursor: not-allowed; }
+@container (max-width: 700px) {
+  .d2 .head { padding-top: 32px; }
+  .d2 h1 { font-size: 34px; }
+  .d2 .head p { font-size: 18px; }
+  .d2 .table { height: 30%; }
+  .d2 .cards { flex-direction: column; gap: 18px; bottom: 26px; }
+  .pc { width: 300px; height: 236px; }
+  .pc.host { transform: rotate(-2deg); } .pc.guest { transform: rotate(2deg); }
+  .pc .face { flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 0 14px; padding: 14px; }
+  .pc .art { width: 112px; height: 112px; }
+  .pc .art::after { height: 22px; border-top-width: 4px; }
+  .pc .art svg.who { width: 104px; height: 104px; bottom: 6px; }
+  .pc h2 { font-size: 32px; margin: 0; align-self: center; }
+  .pc p { flex-basis: 100%; font-size: 16px; margin-top: 14px; padding: 0 2px; }
+  .pc .back { padding: 20px; }
+  .pc .back svg { width: 40px; height: 40px; margin-bottom: 10px; }
+  .pc .back h2 { font-size: 28px; }
+}
+
+/* ---------- draft 3: rise from behind the table ---------- */
+.d3 { position: relative; height: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+.d3 .title { position: absolute; left: 0; right: 0; top: 56px; text-align: center; z-index: 3; pointer-events: none; padding: 0 24px; }
+.d3 h1 { font: 800 54px/1.04 var(--display); letter-spacing: -.025em; }
+.d3 .title p { font-size: 21px; color: var(--ink2); margin-top: 12px; }
+.side { position: relative; overflow: hidden; }
+.side::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 28%; background: var(--table); border-top: 12px solid var(--rim); z-index: 2; }
+.side .bust { position: absolute; bottom: calc(28% - 150px); width: 400px; height: 400px; transition: transform .55s var(--ease), opacity .55s var(--ease); }
+.side.host .bust { right: 60px; } .side.guest .bust { left: 60px; }
+.side .tag { position: absolute; top: 300px; z-index: 3; max-width: 260px; }
+.side.host .tag { left: 64px; } .side.guest .tag { right: 64px; text-align: right; }
+.side .tag b { display: inline-block; font: 800 44px/1 var(--display); letter-spacing: -.02em; padding: 6px 0 10px; box-shadow: inset 0 -5px 0 transparent; transition: box-shadow .35s var(--ease); }
+.side .tag span { display: block; font-size: 20px; line-height: 1.4; color: var(--ink2); margin-top: 8px; }
+.side:hover .bust, .side:focus-visible .bust { transform: translateY(-80px); }
+.d3:has(.side:hover) .side:not(:hover) .bust, .d3:has(.side:focus-visible) .side:not(:focus-visible) .bust { transform: translateY(70px); opacity: .55; }
+.side:hover .tag b, .side:focus-visible .tag b { box-shadow: inset 0 -5px 0 var(--s); }
+.side:focus-visible { outline-offset: -8px; border-radius: 16px; }
+.frame[data-state="checking"] .side.host .bust { transform: translateY(-80px); }
+.d3 .slip { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%) rotate(-1.5deg); z-index: 4; width: min(560px, 86%); background: var(--paper); border-radius: 12px; padding: 18px 22px; box-shadow: 0 14px 22px -12px rgba(32, 35, 43, .5); font: 700 19px/1.45 var(--text); }
+.d3 .slip b { color: var(--l); }
+@container (max-width: 700px) {
+  .d3 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; padding-top: 128px; }
+  .d3 .title { top: 28px; }
+  .d3 h1 { font-size: 32px; }
+  .d3 .title p { font-size: 17px; }
+  .side::after { height: 22%; border-top-width: 8px; }
+  .side .bust { width: 230px; height: 230px; bottom: calc(22% - 70px); }
+  .side.host .bust { right: 4px; } .side.guest .bust { left: 4px; }
+  .side .tag { top: 34px; max-width: 160px; }
+  .side.host .tag { left: 20px; } .side.guest .tag { right: 20px; }
+  .side .tag b { font-size: 30px; }
+  .side .tag span { font-size: 15px; }
+  .side:hover .bust, .side:focus-visible .bust, .frame[data-state="checking"] .side.host .bust { transform: translateY(-36px); }
+  .d3:has(.side:hover) .side:not(:hover) .bust { transform: translateY(30px); }
+  .d3 .slip { bottom: auto; top: 50%; font-size: 15px; padding: 12px 14px; }
+}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="robot" viewBox="0 0 200 200">
+    <line class="rb-ant" x1="100" y1="42" x2="100" y2="22"/><circle class="rb-bulb" cx="100" cy="16" r="8"/>
+    <rect class="rb-ear" x="24" y="72" width="16" height="38" rx="7"/><rect class="rb-ear" x="160" y="72" width="16" height="38" rx="7"/>
+    <rect class="rb-neck" x="86" y="136" width="28" height="16" rx="4"/>
+    <path class="rb-body" d="M46 204V176c0-17 12-28 30-28h48c18 0 30 11 30 28v28z"/>
+    <rect class="rb-head" x="36" y="38" width="128" height="102" rx="32"/><rect class="rb-screen" x="52" y="56" width="96" height="64" rx="22"/>
+    <ellipse class="rb-eye" cx="79" cy="85" rx="8.5" ry="11"/><ellipse class="rb-eye" cx="121" cy="85" rx="8.5" ry="11"/>
+    <circle class="rb-shine" cx="82" cy="80" r="2.6"/><circle class="rb-shine" cx="124" cy="80" r="2.6"/>
+    <path class="rb-mouth" d="M91 104q9 7 18 0"/><circle class="rb-cheek" cx="64" cy="104" r="5"/><circle class="rb-cheek" cx="136" cy="104" r="5"/>
+    <path class="rb-tie" d="M100 162 80 151v22zM100 162l20-11v22z"/><circle class="rb-tie" cx="100" cy="162" r="5.5"/>
+    <circle class="rb-dot" cx="86" cy="188" r="3.5"/><circle class="rb-dot" cx="100" cy="188" r="3.5"/><circle class="rb-dot" cx="114" cy="188" r="3.5"/>
+  </symbol>
+  <symbol id="human" viewBox="0 0 200 200">
+    <rect class="hu-neck" x="89" y="122" width="22" height="28" rx="6"/>
+    <path class="hu-jacket" d="M40 204v-24c0-22 16-34 40-36h40c24 2 40 14 40 36v24z"/>
+    <path class="hu-shirt" d="M82 144h36l-18 38z"/><path class="hu-tie" d="M100 150l-6 7 6 24 6-24z"/>
+    <path class="hu-lapel" d="M82 144l18 38-11 6-15-38zM118 144l-18 38 11 6 15-38z"/>
+    <circle class="hu-skin" cx="57" cy="94" r="9"/><circle class="hu-skin" cx="143" cy="94" r="9"/><circle class="hu-skin" cx="100" cy="88" r="44"/>
+    <path class="hu-hair" d="M55 92c-4-34 18-56 46-56 29 0 50 20 46 54-5-11-9-19-16-25-16 11-42 15-64 9-6 5-10 11-12 18z"/>
+    <ellipse class="hu-eye" cx="84" cy="96" rx="4.6" ry="6"/><ellipse class="hu-eye" cx="116" cy="96" rx="4.6" ry="6"/>
+    <circle class="hu-cheek" cx="72" cy="110" r="6"/><circle class="hu-cheek" cx="128" cy="110" r="6"/><path class="hu-smile" d="M92 112q8 7 16 0"/>
+  </symbol>
+  <symbol id="plug" viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 6v10M31 6v10M11 16h26v8a13 13 0 0 1-26 0z"/><path d="M24 37v7"/><path d="M6 6l36 36" stroke="#fff3c9"/></g></symbol>
+</defs></svg>
+
+<main class="board">
+  <h1>Sign-in screen, three drafts</h1>
+  <p>Each draft replaces the Host / Join as guest screen. The robot is the host (this laptop runs the bot on the projector); the human is the guest (the friend's own device). Click either character. Use the controls above each frame for the checking and refused states, and to see it at phone width, where most guests open it.</p>
+
+  <section class="draft" data-draft="1">
+    <h2><b>1</b>The room plan</h2>
+    <p class="why"><strong>The screen as a map of the room.</strong> The robot sits at the presenter's desk under the projector; the human sits in the corner, joined by the room wifi. Picking a role means picking where this screen is. It also explains, without a paragraph, why only the projector laptop can host.</p>
+    <div class="ctl"></div>
+    <div class="frame" data-state="ready">
+      <div class="d1">
+        <div class="copy">
+          <h1>Rock, paper, scissors against the bot</h1>
+          <p>Where is this screen? The host runs the match on the projector. The guest plays the bot from a corner of the room.</p>
+          <p class="msg when-refused" role="alert">Hosting works only on the laptop running the server. On this laptop, choose Join as guest.</p>
+        </div>
+        <div class="plan">
+          <div class="screen"></div><div class="beam"></div><div class="screen-l">Projector</div>
+          <div class="rows" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <svg class="wifi" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M60 30 C 72 40, 70 58, 84 70"/></svg>
+          <span class="wifi-l" aria-hidden="true">room wifi</span>
+          <span class="corner-l" aria-hidden="true">The corner</span>
+          <button class="seat host" data-go="host">
+            <span class="fig"><svg class="who bust" viewBox="0 0 200 200"><use href="#robot"/></svg><span class="desk"></span></span>
+            <span class="lbl"><b>Host</b><span class="when-ready">Runs the match on this laptop and its projector.</span><span class="when-checking">Checking the server…</span><span class="when-refused">Not on this laptop.</span></span>
+          </button>
+          <button class="seat guest" data-go="guest">
+            <span class="fig"><svg class="who bust" viewBox="0 0 200 200"><use href="#human"/></svg><span class="desk"></span></span>
+            <span class="lbl"><b>Join as guest</b><span>Play the bot from your own device.</span></span>
+          </button>
+        </div>
+      </div>
+      <div class="toast"></div>
+    </div>
+  </section>
+
+  <section class="draft" data-draft="2">
+    <h2><b>2</b>Two cards on the table</h2>
+    <p class="why"><strong>The roles as the game's own cards.</strong> The same face-up cards the projector deals, drawn large, each with its player standing at the table. A hovered card straightens and lifts like a card being picked up. When hosting is refused, the robot's card turns face down and says why on its back.</p>
+    <div class="ctl"></div>
+    <div class="frame" data-state="ready">
+      <div class="d2">
+        <div class="head">
+          <h1>Rock, paper, scissors against the bot</h1>
+          <p>Pick this screen's card.</p>
+        </div>
+        <div class="table"></div>
+        <div class="cards">
+          <button class="pc host" data-go="host" aria-describedby="d2-refused">
+            <span class="in">
+              <span class="face">
+                <span class="art"><svg class="who" viewBox="0 0 200 200"><use href="#robot"/></svg></span>
+                <h2>Host</h2>
+                <p class="when-ready">Runs the match on this laptop and its projector.</p>
+                <p class="when-checking">Checking the server…</p>
+                <p class="when-refused">Not on this laptop.</p>
+              </span>
+              <span class="face back"><svg aria-hidden="true"><use href="#plug"/></svg><h2>Not on this laptop</h2><p id="d2-refused">Hosting works only on the laptop running the server. On this laptop, choose Join as guest.</p></span>
+            </span>
+          </button>
+          <button class="pc guest" data-go="guest">
+            <span class="in"><span class="face">
+              <span class="art"><svg class="who" viewBox="0 0 200 200"><use href="#human"/></svg></span>
+              <h2>Join as guest</h2>
+              <p>Play the bot from your own device.</p>
+            </span></span>
+          </button>
+        </div>
+      </div>
+      <div class="toast"></div>
+    </div>
+  </section>
+
+  <section class="draft" data-draft="3">
+    <h2><b>3</b>Stand up to play</h2>
+    <p class="why"><strong>The projector's scene, waiting for its players.</strong> Both characters sit low behind the table. Point at a side and that player stands up while the other sits back down; click to take that side. Each half of the screen is the button, so it is hard to miss on a phone.</p>
+    <div class="ctl"></div>
+    <div class="frame" data-state="ready">
+      <div class="d3">
+        <div class="title"><h1>Rock, paper, scissors against the bot</h1><p>Pick a side for this screen.</p></div>
+        <button class="side host" data-go="host">
+          <svg class="who bust" viewBox="0 0 200 200"><use href="#robot"/></svg>
+          <span class="tag"><b>Host</b><span class="when-ready">Runs the match on this laptop and its projector.</span><span class="when-checking">Checking the server…</span><span class="when-refused">Not on this laptop.</span></span>
+        </button>
+        <button class="side guest" data-go="guest">
+          <svg class="who bust" viewBox="0 0 200 200"><use href="#human"/></svg>
+          <span class="tag"><b>Join as guest</b><span>Play the bot from your own device.</span></span>
+        </button>
+        <p class="slip when-refused" role="alert"><b>Hosting works only on the laptop running the server.</b> On this laptop, choose Join as guest.</p>
+      </div>
+      <div class="toast"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const STATES = [["ready", "Ready"], ["checking", "Checking"], ["refused", "Refused here"]];
+document.querySelectorAll(".draft").forEach((d) => {
+  const frame = d.querySelector(".frame");
+  const toast = frame.querySelector(".toast");
+  const ctl = d.querySelector(".ctl");
+  ctl.innerHTML =
+    `<div class="ex" role="group" aria-label="State">${STATES.map(([v, l]) => `<button data-s="${v}" aria-pressed="${v === "ready"}">${l}</button>`).join("")}</div>` +
+    `<div class="ex" role="group" aria-label="Width"><button data-w="desk" aria-pressed="true">Laptop</button><button data-w="phone" aria-pressed="false">Phone</button></div>`;
+  const setState = (s) => {
+    frame.dataset.state = s;
+    ctl.querySelectorAll("[data-s]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.s === s));
+  };
+  ctl.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.s) setState(b.dataset.s);
+    if (b.dataset.w) {
+      frame.classList.toggle("phone", b.dataset.w === "phone");
+      ctl.querySelectorAll("[data-w]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    }
+  });
+  let timer;
+  const say = (text) => {
+    toast.textContent = text;
+    toast.classList.add("show");
+    clearTimeout(timer);
+    timer = setTimeout(() => toast.classList.remove("show"), 1800);
+  };
+  frame.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-go]");
+    if (!b) return;
+    if (b.dataset.go === "guest") return say("Opens the guest screen");
+    if (frame.dataset.state === "refused") return;
+    setState("checking");
+    setTimeout(() => { setState("ready"); say("Opens the host lobby"); }, 1400);
+  });
+});
+</script>
+</body></html>
+<script>
+// review shortcuts: #phone, #refused, #checking set every frame at once
+for (const k of location.hash.slice(1).split(",")) {
+  document.querySelectorAll(`.ctl [data-w="${k}"], .ctl [data-s="${k}"]`).forEach((b) => b.click());
+}
+</script>

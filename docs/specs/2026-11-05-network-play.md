@@ -98,20 +98,21 @@ Roles: each screen says which role it wants. The host role is allowed only when 
 | `POST /api/host/pick` | host | `{move}` | `pickMove` |
 | `POST /api/host/throw` | host | `{move}` | `throwMove` (fallback, user, confirmed) |
 | `POST /api/host/next` | host | `{}` | `nextRound` |
-| `POST /api/host/new` | host | `{bestOf, bot?}` | new match; `bot` is a file name in the bots folder, default the current one |
+| `POST /api/host/new` | host | `{bestOf, bot?}` | new match, and the match starts (`started` true); `bot` is a file name in the bots folder, default the current one. The lobby's Start game sends it |
+| `POST /api/host/lobby` | host | `{}` | back to the lobby (`started` false); the bot and match length stay as the lobby's starting choice |
 | `GET /api/host/bots` | host | none | `{files: [names]}`, the `*.json` names in the bots folder, sorted |
 | `POST /api/host/free-seat` | host | `{}` | the seat becomes empty |
 | `POST /api/player/claim` | anyone | `{seat}` | takes the seat if it is empty |
 | `POST /api/player/leave` | seat holder | `{seat}` | the seat becomes empty (user, confirmed) |
 | `POST /api/player/throw` | seat holder | `{seat, move}` | `throwMove` |
 
-Responses: `204` on success. Errors return JSON `{error: <message>}`: `400` bad JSON, unknown move, `bestOf` not 3 or 5, a bad bot file name, or `/api/events` with a missing or unknown `role` or a player without `seat`; `403` any host path (incl. `/api/events?role=host`) from a non-loopback address, or a seat id that does not hold the seat; `409` flow error `"phase"` or `"wrong"`; `404` any other `/api/` path or method.
+Responses: `204` on success. Errors return JSON `{error: <message>}`: `400` bad JSON, unknown move, `bestOf` not 3 or 5, a bad bot file name, or `/api/events` with a missing or unknown `role` or a player without `seat`; `403` any host path (incl. `/api/events?role=host`) from a non-loopback address, or a seat id that does not hold the seat; `409` flow error `"phase"` or `"wrong"`, or a pick, throw or next while `started` is false (the lobby); `404` any other `/api/` path or method.
 
 `state` event data (JSON):
 
-- host: `{role: "host", bot: <file name>, flow: hostView(flow), seat: "empty" | "taken", playerOnline: bool}`. `playerOnline` is true while the seat holder has an open events stream.
-- guest holding the seat: `{role: "player", seat: "mine", view: playerView(flow)}`.
-- other guest: `{role: "player", seat: "empty" | "taken", view: null}`.
+- host: `{role: "host", started: bool, bot: <file name>, flow: hostView(flow), seat: "empty" | "taken", playerOnline: bool}`. `playerOnline` is true while the seat holder has an open events stream. `started` is false from server start until `POST /api/host/new`, and again after `POST /api/host/lobby`; the host screen shows the lobby while it is false.
+- guest holding the seat: `{role: "player", started: bool, seat: "mine", view: playerView(flow)}`. While `started` is false the guest screen says it is waiting for the host.
+- other guest: `{role: "player", started: bool, seat: "empty" | "taken", view: null}`.
 
 ## Subtasks
 

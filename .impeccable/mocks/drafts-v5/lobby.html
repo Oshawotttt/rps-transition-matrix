@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Host Lobby Drafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Gabarito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #fbfbf8; --ink: #20232b; --ink2: #4a4f5c; --wall: #f1efe8; --table: #c9d8c5; --rim: #7f9a7b;
+  --r: #c24b3a; --p: #3462ad; --s: #d39b22; --w: #2f7b55; --t: #d8d5cc; --l: #c24b3a; --hi: #fff3c9; --faint: #a19e96;
+  --robot: #e6ebf1; --robot2: #a9b6c6; --screen: #20232b; --glow: #a6f0c6; --bulb: #d39b22; --blush: #f4b0a6; --tie: #3462ad;
+  --jacket: #b4483a; --jacket2: #963a2f; --shirt: #fbfbf8; --tie2: #20232b; --skin: #f3cfae; --skin2: #e3b893; --hair: #2e2420; --face: #20232b;
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --display: "Gabarito", system-ui, sans-serif; --text: "Atkinson Hyperlegible", system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #e7e4da; font-family: var(--text); color: var(--ink); font-size: 22px; font-variant-numeric: tabular-nums; }
+::selection { background: var(--p); color: #fff; }
+:focus-visible { outline: 3px solid var(--p); outline-offset: 3px; }
+button, select { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+
+.board { max-width: 1440px; margin: 0 auto; padding: 48px 56px 120px; }
+.board > h1 { font: 800 48px/1.05 var(--display); letter-spacing: -.02em; }
+.board > p { font-size: 20px; line-height: 1.5; max-width: 72ch; margin-top: 12px; color: var(--ink2); }
+.draft { margin-top: 72px; }
+.draft > h2 { font: 800 32px/1.15 var(--display); letter-spacing: -.01em; }
+.draft > h2 b { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: 22px; margin-right: 14px; vertical-align: 4px; }
+.draft > .why { font-size: 19px; line-height: 1.5; max-width: 82ch; margin: 10px 0 18px; color: var(--ink2); }
+.draft > .why strong { color: var(--ink); }
+.ex { display: flex; gap: 4px; padding: 4px; border-radius: 12px; box-shadow: inset 0 0 0 2px var(--t); background: var(--paper); width: max-content; margin-bottom: 16px; }
+.ex button { height: 40px; padding: 0 14px; border-radius: 9px; font: 700 16px var(--text); }
+.ex button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.frame { position: relative; height: 880px; border-radius: 16px; overflow: hidden; background: var(--wall); box-shadow: 0 24px 48px -30px rgba(32, 35, 43, .55); }
+.toast { position: absolute; left: 50%; top: 24px; transform: translate(-50%, -140%); z-index: 20; background: var(--ink); color: var(--paper); font: 700 18px var(--text); padding: 12px 20px; border-radius: 999px; transition: transform .45s var(--ease); white-space: nowrap; visibility: hidden; }
+.toast.show { transform: translate(-50%, 0); visibility: visible; }
+
+/* characters, as in the projector */
+.rb-head, .rb-body { fill: var(--robot); } .rb-ear, .rb-neck, .rb-dot { fill: var(--robot2); } .rb-screen { fill: var(--screen); }
+.rb-eye { fill: var(--glow); } .rb-shine { fill: #fff; } .rb-mouth { fill: none; stroke: var(--glow); stroke-width: 4; stroke-linecap: round; }
+.rb-ant { stroke: var(--robot2); stroke-width: 5; stroke-linecap: round; } .rb-bulb { fill: var(--bulb); } .rb-cheek { fill: var(--blush); opacity: .85; } .rb-tie { fill: var(--tie); }
+.hu-jacket { fill: var(--jacket); } .hu-lapel { fill: var(--jacket2); } .hu-shirt { fill: var(--shirt); } .hu-tie { fill: var(--tie2); }
+.hu-skin { fill: var(--skin); } .hu-neck { fill: var(--skin2); } .hu-hair { fill: var(--hair); } .hu-eye { fill: var(--face); }
+.hu-smile { fill: none; stroke: var(--face); stroke-width: 3.5; stroke-linecap: round; } .hu-cheek { fill: var(--blush); opacity: .6; }
+.nb { fill: none; stroke: currentColor; stroke-width: 4; stroke-dasharray: 3 9; stroke-linecap: round; }
+
+/* the guest's seat: an empty dashed outline until they join; greyed while offline */
+.seatfig { position: relative; display: block; }
+.seatfig svg { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity .6s var(--ease), transform .6s var(--ease), filter .6s var(--ease); }
+.seatfig .nobody { color: var(--faint); }
+.seatfig .someone { opacity: 0; transform: translateY(30px); }
+.frame:not([data-guest="empty"]) .seatfig .nobody { opacity: 0; }
+.frame:not([data-guest="empty"]) .seatfig .someone { opacity: 1; transform: none; }
+.frame[data-guest="off"] .seatfig .someone { filter: grayscale(1) opacity(.5); }
+.g-empty, .g-on, .g-off { display: none; }
+.frame[data-guest="empty"] .g-empty, .frame[data-guest="on"] .g-on, .frame[data-guest="off"] .g-off { display: revert; }
+.dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--faint); flex: none; }
+.frame[data-guest="on"] .dot { background: var(--w); box-shadow: 0 0 0 5px rgba(47, 123, 85, .2); }
+
+/* shared controls */
+.start { flex: none; white-space: nowrap; height: 88px; padding: 0 44px; border-radius: 16px; background: var(--ink); color: var(--paper); font: 800 32px var(--display); letter-spacing: -.01em; box-shadow: 0 14px 22px -14px rgba(32, 35, 43, .7); transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
+.start:hover { transform: translateY(-2px); box-shadow: 0 18px 26px -14px rgba(32, 35, 43, .7); }
+.ghost { height: 46px; padding: 0 16px; border-radius: 12px; font: 700 17px var(--text); box-shadow: inset 0 0 0 2px var(--t); background: var(--paper); }
+.ghost:hover:not(:disabled) { box-shadow: inset 0 0 0 2px var(--ink); }
+.ghost:disabled { color: var(--faint); cursor: not-allowed; background: transparent; }
+.topbar { position: absolute; top: 0; left: 0; right: 0; height: 84px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; z-index: 4; }
+.topbar b { font: 800 26px var(--display); }
+.caption { font-size: 19px; line-height: 1.45; color: var(--ink2); max-width: 46ch; }
+
+/* ---------- draft 1: the match as one sentence ---------- */
+.d1 { height: 100%; position: relative; }
+.d1 .body { position: absolute; left: 0; right: 0; top: 140px; padding: 0 96px; }
+.sentence { font: 800 66px/1.42 var(--display); letter-spacing: -.02em; max-width: 1180px; }
+.chip { display: inline-flex; align-items: center; gap: 14px; height: 86px; padding: 0 24px; border-radius: 16px; background: var(--paper); box-shadow: inset 0 0 0 3px var(--t), 0 10px 18px -14px rgba(32, 35, 43, .5); vertical-align: 6px; position: relative; font: inherit; }
+.chip select { appearance: none; font: 800 54px var(--display); letter-spacing: -.02em; padding-right: 50px; background: transparent; color: var(--ink); }
+.chip select:focus-visible { outline: none; }
+.chip:has(select:focus-visible) { outline: 3px solid var(--p); outline-offset: 3px; }
+.chip .chev { position: absolute; right: 22px; width: 30px; height: 30px; pointer-events: none; }
+.chip.friend { font-size: 54px; }
+.chip.friend .g-off { color: var(--ink2); }
+.seg { display: inline-flex; gap: 6px; padding: 6px; border-radius: 16px; background: var(--paper); box-shadow: inset 0 0 0 3px var(--t), 0 10px 18px -14px rgba(32, 35, 43, .5); vertical-align: 6px; }
+.seg button { width: 86px; height: 74px; border-radius: 11px; font: 800 54px var(--display); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.seg button:hover:not([aria-pressed="true"]) { background: var(--wall); }
+.d1 .notes { display: flex; gap: 48px; margin-top: 34px; font-size: 19px; line-height: 1.45; color: var(--ink2); }
+.d1 .notes p { max-width: 40ch; }
+.d1 .notes b { color: var(--ink); }
+.d1 .go { display: flex; align-items: center; gap: 32px; margin-top: 56px; }
+.d1 .floor { position: absolute; left: 0; right: 0; bottom: 0; height: 120px; background: var(--table); border-top: 10px solid var(--rim); }
+.d1 .mini { position: absolute; bottom: 92px; width: 170px; height: 170px; }
+.d1 .mini.bot { left: 96px; } .d1 .mini.hum { right: 96px; }
+.d1 .free { position: absolute; right: 290px; bottom: 30px; z-index: 2; }
+
+/* ---------- draft 2: the length cards on the table ---------- */
+.d2 { height: 100%; position: relative; }
+.d2 .scene { position: absolute; left: 0; right: 0; top: 0; height: 640px; }
+.d2 .tbl { position: absolute; left: 0; right: 0; bottom: 0; height: 180px; background: var(--table); border-top: 12px solid var(--rim); }
+.d2 .tag { position: absolute; top: 100px; z-index: 2; }
+.d2 .tag h2 { font: 800 40px/1 var(--display); letter-spacing: -.02em; display: flex; align-items: center; gap: 14px; }
+.d2 .tag p { font-size: 19px; line-height: 1.4; color: var(--ink2); margin-top: 10px; max-width: 26ch; }
+.d2 .tag.bot { left: 64px; } .d2 .tag.hum { right: 64px; text-align: right; }
+.d2 .tag.hum h2 { justify-content: flex-end; }
+.d2 .tag.hum p { margin-left: auto; }
+.d2 .tag .ghost { margin-top: 16px; }
+.d2 .pick { margin-top: 18px; position: relative; display: inline-flex; align-items: center; }
+.d2 .pick select { appearance: none; height: 54px; padding: 0 52px 0 16px; border-radius: 12px; background: var(--paper); box-shadow: inset 0 0 0 2px var(--t); font: 700 19px var(--text); color: var(--ink); }
+.d2 .pick .chev { position: absolute; right: 16px; width: 22px; height: 22px; pointer-events: none; }
+.d2 .bust { position: absolute; bottom: 150px; width: 300px; height: 300px; }
+.d2 .bust.bot { left: 230px; } .d2 .bust.hum { right: 230px; }
+.d2 .len { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); display: flex; gap: 30px; align-items: flex-end; }
+.d2 .len-l { position: absolute; left: 50%; bottom: 330px; transform: translateX(-50%); font: 700 20px var(--text); color: var(--ink2); white-space: nowrap; }
+.lc { width: 158px; height: 206px; border-radius: 14px; background: var(--paper); display: grid; place-items: center; align-content: center; gap: 2px; box-shadow: 0 12px 20px -10px rgba(32, 35, 43, .5); transition: transform .45s var(--ease), box-shadow .45s var(--ease), opacity .45s var(--ease); }
+.lc small { font: 700 18px var(--text); color: var(--ink2); }
+.lc strong { font: 800 92px/0.95 var(--display); letter-spacing: -.03em; }
+.lc span { font-size: 16px; color: var(--ink2); }
+.lc[data-n="3"] { transform: rotate(-6deg) translateY(14px); } .lc[data-n="5"] { transform: rotate(6deg) translateY(14px); }
+.lc[aria-pressed="false"] { opacity: .72; }
+.lc[aria-pressed="true"] { transform: translateY(-20px); box-shadow: 0 26px 30px -16px rgba(32, 35, 43, .55), 0 0 0 4px var(--ink); opacity: 1; }
+.lc[aria-pressed="false"]:hover { opacity: 1; transform: rotate(0) translateY(0); }
+.d2 .foot { position: absolute; left: 0; right: 0; bottom: 0; top: 640px; background: var(--paper); display: flex; align-items: center; justify-content: center; gap: 36px; padding: 0 64px; }
+
+/* ---------- draft 3: form beside the seat ---------- */
+.d3 { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 500px; background: var(--paper); }
+.d3 .form { padding: 64px 72px; display: flex; flex-direction: column; }
+.d3 h1 { font: 800 54px/1.05 var(--display); letter-spacing: -.025em; }
+.d3 fieldset { border: 0; margin-top: 44px; }
+.d3 legend { font: 800 28px var(--display); margin-bottom: 14px; }
+.opt { display: flex; align-items: center; gap: 18px; padding: 16px 20px; border-radius: 14px; box-shadow: inset 0 0 0 2px var(--t); cursor: pointer; transition: box-shadow .2s var(--ease), background .2s var(--ease); }
+.opt + .opt { margin-top: 10px; }
+.opt input { appearance: none; width: 28px; height: 28px; border-radius: 50%; box-shadow: inset 0 0 0 3px var(--ink2); flex: none; transition: box-shadow .2s var(--ease); }
+.opt input:checked { box-shadow: inset 0 0 0 9px var(--ink); }
+.opt input:focus-visible { outline: 3px solid var(--p); outline-offset: 3px; }
+.opt:has(input:checked) { box-shadow: inset 0 0 0 3px var(--ink); background: var(--hi); }
+.opt:has(input:disabled) { cursor: not-allowed; color: var(--faint); }
+.opt:has(input:disabled) input { box-shadow: inset 0 0 0 3px var(--t); }
+.opt b { display: block; font: 700 21px var(--text); }
+.opt span { display: block; font-size: 17px; color: var(--ink2); margin-top: 3px; }
+.opt:has(input:disabled) span { color: var(--faint); }
+.lens { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.lens .opt { padding: 20px 22px; }
+.lens .opt b { font: 800 34px/1 var(--display); letter-spacing: -.01em; }
+.d3 .go { margin-top: auto; display: flex; align-items: center; gap: 28px; padding-top: 32px; }
+.d3 .seatcol { position: relative; background: var(--wall); }
+.d3 .seatcol .st { position: absolute; top: 64px; left: 48px; right: 48px; }
+.d3 .seatcol h2 { font: 800 42px/1.05 var(--display); letter-spacing: -.02em; display: flex; align-items: center; gap: 14px; }
+.d3 .seatcol p { font-size: 19px; line-height: 1.45; color: var(--ink2); margin-top: 14px; }
+.d3 .seatcol .tbl { position: absolute; left: 0; right: 0; bottom: 0; height: 170px; background: var(--table); border-top: 12px solid var(--rim); }
+.d3 .seatcol .seatfig { position: absolute; left: 50%; bottom: 140px; width: 320px; height: 320px; transform: translateX(-50%); }
+.d3 .seatcol .ghost { position: absolute; left: 50%; bottom: 52px; transform: translateX(-50%); }
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="robot" viewBox="0 0 200 200">
+    <line class="rb-ant" x1="100" y1="42" x2="100" y2="22"/><circle class="rb-bulb" cx="100" cy="16" r="8"/>
+    <rect class="rb-ear" x="24" y="72" width="16" height="38" rx="7"/><rect class="rb-ear" x="160" y="72" width="16" height="38" rx="7"/>
+    <rect class="rb-neck" x="86" y="136" width="28" height="16" rx="4"/>
+    <path class="rb-body" d="M46 204V176c0-17 12-28 30-28h48c18 0 30 11 30 28v28z"/>
+    <rect class="rb-head" x="36" y="38" width="128" height="102" rx="32"/><rect class="rb-screen" x="52" y="56" width="96" height="64" rx="22"/>
+    <ellipse class="rb-eye" cx="79" cy="85" rx="8.5" ry="11"/><ellipse class="rb-eye" cx="121" cy="85" rx="8.5" ry="11"/>
+    <circle class="rb-shine" cx="82" cy="80" r="2.6"/><circle class="rb-shine" cx="124" cy="80" r="2.6"/>
+    <path class="rb-mouth" d="M91 104q9 7 18 0"/><circle class="rb-cheek" cx="64" cy="104" r="5"/><circle class="rb-cheek" cx="136" cy="104" r="5"/>
+    <path class="rb-tie" d="M100 162 80 151v22zM100 162l20-11v22z"/><circle class="rb-tie" cx="100" cy="162" r="5.5"/>
+    <circle class="rb-dot" cx="86" cy="188" r="3.5"/><circle class="rb-dot" cx="100" cy="188" r="3.5"/><circle class="rb-dot" cx="114" cy="188" r="3.5"/>
+  </symbol>
+  <symbol id="human" viewBox="0 0 200 200">
+    <rect class="hu-neck" x="89" y="122" width="22" height="28" rx="6"/>
+    <path class="hu-jacket" d="M40 204v-24c0-22 16-34 40-36h40c24 2 40 14 40 36v24z"/>
+    <path class="hu-shirt" d="M82 144h36l-18 38z"/><path class="hu-tie" d="M100 150l-6 7 6 24 6-24z"/>
+    <path class="hu-lapel" d="M82 144l18 38-11 6-15-38zM118 144l-18 38 11 6 15-38z"/>
+    <circle class="hu-skin" cx="57" cy="94" r="9"/><circle class="hu-skin" cx="143" cy="94" r="9"/><circle class="hu-skin" cx="100" cy="88" r="44"/>
+    <path class="hu-hair" d="M55 92c-4-34 18-56 46-56 29 0 50 20 46 54-5-11-9-19-16-25-16 11-42 15-64 9-6 5-10 11-12 18z"/>
+    <ellipse class="hu-eye" cx="84" cy="96" rx="4.6" ry="6"/><ellipse class="hu-eye" cx="116" cy="96" rx="4.6" ry="6"/>
+    <circle class="hu-cheek" cx="72" cy="110" r="6"/><circle class="hu-cheek" cx="128" cy="110" r="6"/><path class="hu-smile" d="M92 112q8 7 16 0"/>
+  </symbol>
+  <symbol id="nobody" viewBox="0 0 200 200"><circle class="nb" cx="100" cy="88" r="44"/><path class="nb" d="M40 202v-22c0-22 16-34 40-36h40c24 2 40 14 40 36v22"/></symbol>
+  <symbol id="chev" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</defs></svg>
+
+<main class="board">
+  <h1>Host lobby, three drafts</h1>
+  <p>The host's screen before the match: pick the bot and the match length, see whether the friend has joined, then start. Use the control above each frame to play through the guest arriving and dropping off. The bot list is what the server's bots folder holds; the friend's bot is shown disabled because it is not trained yet.</p>
+
+  <section class="draft" data-draft="1">
+    <h2><b>1</b>The match in one sentence</h2>
+    <p class="why"><strong>Setup read aloud.</strong> Every setting is a word in one sentence the presenter can say to the class: "Our bot plays your friend, best of 3." The friend's slot fills in by itself when they join. The two players wait on the table at the foot of the screen.</p>
+    <div class="ctlslot"></div>
+    <div class="frame" data-guest="empty">
+      <div class="d1">
+        <div class="topbar"><b>Rock, paper, scissors</b><button class="ghost">Leave</button></div>
+        <div class="body">
+          <p class="sentence">Our bot,
+            <label class="chip"><span class="sr" hidden>Bot</span><select data-bot aria-label="Bot"><option value="bot_rps_human_combined.json">pooled</option><option disabled>friend's</option></select><svg class="chev" aria-hidden="true"><use href="#chev"/></svg></label>,
+            plays
+            <span class="chip friend" role="status"><span class="dot"></span><span class="g-empty" style="color:var(--ink2)">no one yet</span><span class="g-on">your friend</span><span class="g-off">your friend, offline</span></span>,
+            best of <span class="seg" role="group" aria-label="Match length"><button data-n="3" aria-pressed="true">3</button><button data-n="5" aria-pressed="false">5</button></span>.
+          </p>
+          <div class="notes">
+            <p><b data-botfile>bot_rps_human_combined.json</b><br><span data-botsrc>Pooled from Brockbank &amp; Vul 2021 and Wang, Xu &amp; Zhou 2014. Your friend's bot joins the list once it is trained.</span></p>
+            <p><b data-first>First to 2 round wins.</b><br>Ties are replayed.</p>
+          </div>
+          <div class="go">
+            <button class="start" data-start>Start game</button>
+            <p class="caption"><span class="g-empty">No guest yet. Your friend picks Join as guest on their own device. You can also start now and enter their throw on this screen.</span><span class="g-on">Your friend is in. Ties are replayed.</span><span class="g-off">Your friend's page lost the connection. It rejoins on its own when it reconnects.</span></p>
+          </div>
+        </div>
+        <div class="floor"></div>
+        <svg class="mini bot" viewBox="0 0 200 200" aria-hidden="true"><use href="#robot"/></svg>
+        <span class="seatfig mini hum" aria-hidden="true"><svg class="nobody" viewBox="0 0 200 200"><use href="#nobody"/></svg><svg class="someone" viewBox="0 0 200 200"><use href="#human"/></svg></span>
+        <button class="ghost free" data-free>Free the seat</button>
+      </div>
+      <div class="toast"></div>
+    </div>
+  </section>
+
+  <section class="draft" data-draft="2">
+    <h2><b>2</b>Deal the match length</h2>
+    <p class="why"><strong>The projector's scene before the first round.</strong> The same table, our bot on the left with its picker under its name, the friend's chair on the right as a dashed outline until they sit down. The match length is two cards on the table; the chosen one stands up. Start game sits below, where Next round will be later.</p>
+    <div class="ctlslot"></div>
+    <div class="frame" data-guest="empty">
+      <div class="d2">
+        <div class="scene">
+          <div class="tag bot">
+            <h2>That's us</h2>
+            <p>The bot plays from this laptop.</p>
+            <label class="pick"><select data-bot aria-label="Bot"><option value="bot_rps_human_combined.json">Pooled default</option><option disabled>Your friend's bot (not trained yet)</option></select><svg class="chev" aria-hidden="true"><use href="#chev"/></svg></label>
+          </div>
+          <div class="tag hum" role="status">
+            <h2><span class="g-empty">No guest yet</span><span class="g-on">Your friend</span><span class="g-off">Guest offline</span><span class="dot"></span></h2>
+            <p><span class="g-empty">Waiting for someone to pick Join as guest.</span><span class="g-on">Online and ready to throw.</span><span class="g-off">Their page lost the connection.</span></p>
+            <button class="ghost" data-free>Free the seat</button>
+          </div>
+          <svg class="bust bot" viewBox="0 0 200 200" aria-hidden="true"><use href="#robot"/></svg>
+          <span class="seatfig bust hum" aria-hidden="true"><svg class="nobody" viewBox="0 0 200 200"><use href="#nobody"/></svg><svg class="someone" viewBox="0 0 200 200"><use href="#human"/></svg></span>
+          <div class="tbl"></div>
+          <span class="len-l">Match length</span>
+          <div class="len" role="group" aria-label="Match length">
+            <button class="lc" data-n="3" aria-pressed="true"><small>Best of</small><strong>3</strong><span>first to 2</span></button>
+            <button class="lc" data-n="5" aria-pressed="false"><small>Best of</small><strong>5</strong><span>first to 3</span></button>
+          </div>
+        </div>
+        <div class="foot">
+          <button class="start" data-start>Start game</button>
+          <p class="caption"><span class="g-empty">You can start without a guest and enter their throw on this screen. Ties are replayed.</span><span class="g-on">Your friend is in. Ties are replayed.</span><span class="g-off">Start anyway, or wait for their page to reconnect. Ties are replayed.</span></p>
+        </div>
+      </div>
+      <div class="toast"></div>
+    </div>
+  </section>
+
+  <section class="draft" data-draft="3">
+    <h2><b>3</b>Settings beside the seat</h2>
+    <p class="why"><strong>A plain setup form with the guest's seat kept in view.</strong> The quietest of the three: the bot list and the match length as large choices on paper, and a wall panel on the right that only answers "has my friend joined?". Easiest to read at a glance while the friend is still finding the page.</p>
+    <div class="ctlslot"></div>
+    <div class="frame" data-guest="empty">
+      <div class="d3">
+        <div class="form">
+          <h1>Set up the match</h1>
+          <fieldset>
+            <legend>Bot</legend>
+            <label class="opt"><input type="radio" name="d3bot" checked><span><b>Pooled default</b><span>bot_rps_human_combined.json, from Brockbank &amp; Vul 2021 and Wang, Xu &amp; Zhou 2014</span></span></label>
+            <label class="opt"><input type="radio" name="d3bot" disabled><span><b>Your friend's bot</b><span>Not trained yet: play their training rounds first</span></span></label>
+          </fieldset>
+          <fieldset>
+            <legend>Match length</legend>
+            <div class="lens">
+              <label class="opt"><input type="radio" name="d3len" value="3" checked><span><b>Best of 3</b><span>First to 2 wins</span></span></label>
+              <label class="opt"><input type="radio" name="d3len" value="5"><span><b>Best of 5</b><span>First to 3 wins</span></span></label>
+            </div>
+          </fieldset>
+          <div class="go">
+            <button class="start" data-start>Start game</button>
+            <p class="caption">Ties are replayed. <span class="g-empty">No guest yet: you can start and enter their throw here.</span></p>
+          </div>
+        </div>
+        <div class="seatcol" role="status">
+          <div class="st">
+            <h2><span class="dot"></span><span class="g-empty">No guest yet</span><span class="g-on">Your friend has joined</span><span class="g-off">Guest offline</span></h2>
+            <p><span class="g-empty">Your friend picks Join as guest on their own device. This seat fills in when they do.</span><span class="g-on">They are online and will see the round as soon as you start.</span><span class="g-off">Their page lost the connection. It rejoins on its own, or free the seat for someone else.</span></p>
+          </div>
+          <span class="seatfig" aria-hidden="true"><svg class="nobody" viewBox="0 0 200 200"><use href="#nobody"/></svg><svg class="someone" viewBox="0 0 200 200"><use href="#human"/></svg></span>
+          <div class="tbl"></div>
+          <button class="ghost" data-free>Free the seat</button>
+        </div>
+      </div>
+      <div class="toast"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const GUEST = [["empty", "No guest yet"], ["on", "Guest online"], ["off", "Guest offline"]];
+document.querySelectorAll(".draft").forEach((d) => {
+  const frame = d.querySelector(".frame");
+  const toast = frame.querySelector(".toast");
+  const slot = d.querySelector(".ctlslot");
+  slot.innerHTML = `<div class="ex" role="group" aria-label="Guest">${GUEST.map(([v, l]) => `<button data-g="${v}" aria-pressed="${v === "empty"}">${l}</button>`).join("")}</div>`;
+  let n = 3;
+  const setGuest = (g) => {
+    frame.dataset.guest = g;
+    slot.querySelectorAll("[data-g]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.g === g));
+    frame.querySelectorAll("[data-free]").forEach((b) => { b.disabled = g === "empty"; });
+  };
+  setGuest("empty");
+  slot.addEventListener("click", (e) => { const b = e.target.closest("[data-g]"); if (b) setGuest(b.dataset.g); });
+  let timer;
+  const say = (text) => {
+    toast.textContent = text;
+    toast.classList.add("show");
+    clearTimeout(timer);
+    timer = setTimeout(() => toast.classList.remove("show"), 1800);
+  };
+  frame.addEventListener("click", (e) => {
+    const len = e.target.closest("button[data-n]");
+    if (len) {
+      n = Number(len.dataset.n);
+      frame.querySelectorAll("button[data-n]").forEach((b) => b.setAttribute("aria-pressed", b === len));
+      const f = frame.querySelector("[data-first]");
+      if (f) f.textContent = `First to ${n === 3 ? 2 : 3} round wins.`;
+    }
+    if (e.target.closest("[data-free]")) setGuest("empty");
+    if (e.target.closest("[data-start]")) say(`Starts a best of ${n} with the pooled bot`);
+  });
+  frame.addEventListener("change", (e) => {
+    if (e.target.name === "d3len") n = Number(e.target.value);
+  });
+});
+</script>
+</body></html>
+<script>
+// review shortcut: #on or #off sets every frame's guest state
+const g = location.hash.slice(1);
+if (g) document.querySelectorAll(`.ctlslot [data-g="${g}"]`).forEach((b) => b.click());
+</script>
